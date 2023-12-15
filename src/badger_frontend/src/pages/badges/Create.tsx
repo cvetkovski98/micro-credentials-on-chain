@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  NewBadgeRequest,
-  Organisation,
-  Student,
-  isOK,
-} from "../../badges/models";
+import { NewBadgeRequest, Organisation, User, isOK } from "../../badges/models";
 import { BadgeForm, BadgeFormValues } from "../../components/forms/BadgeForm";
 import { useNavigate } from "react-router-dom";
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { organisationsAPI } from "../../badges/api/remote/organisations";
-import { studentsAPI } from "../../badges/api/remote/students";
+import { usersAPI } from "../../badges/api/remote/users";
 import { useBackendActor } from "../../context/Global";
 
 export const BadgeCreatePage: React.FC = () => {
@@ -18,10 +13,10 @@ export const BadgeCreatePage: React.FC = () => {
 
   const RemoteBadgesAPI = badgesAPI(actor);
   const RemoteOrganisationsAPI = organisationsAPI(actor);
-  const RemoteStudentsAPI = studentsAPI(actor);
+  const RemoteUsersAPI = usersAPI(actor);
 
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -43,9 +38,9 @@ export const BadgeCreatePage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    RemoteStudentsAPI.getAll()
+    RemoteUsersAPI.getAll()
       .then((value) => {
-        if (isOK(value)) setStudents(value.ok);
+        if (isOK(value)) setUsers(value.ok);
         else setError(value.error);
       })
       .catch((error) => {
@@ -101,7 +96,7 @@ export const BadgeCreatePage: React.FC = () => {
         <BadgeForm
           onSubmit={handleSubmit}
           organisations={organisations}
-          students={students}
+          users={users}
           disabled={loading}
         />
       </div>

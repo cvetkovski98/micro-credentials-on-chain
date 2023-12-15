@@ -3,13 +3,13 @@ import { useParams } from "react-router-dom";
 import {
   Organisation,
   Badge,
-  Student,
-  TEST_STUDENT_ID,
+  User,
+  TEST_USER_ID,
   isOK,
 } from "../../badges/models";
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { organisationsAPI } from "../../badges/api/remote/organisations";
-import { studentsAPI } from "../../badges/api/remote/students";
+import { usersAPI } from "../../badges/api/remote/users";
 import { useBackendActor } from "../../context/Global";
 
 export const BadgeDetailsPage: React.FC = () => {
@@ -18,18 +18,18 @@ export const BadgeDetailsPage: React.FC = () => {
 
   const RemoteBadgesAPI = badgesAPI(actor);
   const RemoteOrganisationsAPI = organisationsAPI(actor);
-  const RemoteStudentsAPI = studentsAPI(actor);
+  const RemoteUsersAPI = usersAPI(actor);
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [badge, setBadge] = React.useState<Badge>();
   const [organisation, setOrganisation] = React.useState<Organisation>();
-  const [student, setStudent] = React.useState<Student>();
+  const [user, setUser] = React.useState<User>();
 
   useEffect(() => {
     const id: bigint = BigInt(badgeID);
     setLoading(true);
-    RemoteBadgesAPI.getOne(TEST_STUDENT_ID, id)
+    RemoteBadgesAPI.getOne(TEST_USER_ID, id)
       .then((value) => {
         if (isOK(value)) setBadge(value.ok);
         else setError(value.error);
@@ -58,9 +58,9 @@ export const BadgeDetailsPage: React.FC = () => {
   useEffect(() => {
     if (!badge) return;
 
-    RemoteStudentsAPI.getOne(badge.ownerID)
+    RemoteUsersAPI.getOne(badge.ownerID)
       .then((value) => {
-        if (isOK(value)) setStudent(value.ok);
+        if (isOK(value)) setUser(value.ok);
         else setError(value.error);
       })
       .catch((error) => {
@@ -127,7 +127,7 @@ export const BadgeDetailsPage: React.FC = () => {
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Owner</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {badge.ownerID.toString()} - {student?.name}
+                  {badge.ownerID.toString()} - {user?.name}
                 </dd>
               </div>
               <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">

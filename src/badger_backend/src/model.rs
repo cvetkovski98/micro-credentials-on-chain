@@ -77,9 +77,12 @@ pub struct NewOrganisation {
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
-pub struct Student {
-    #[serde(rename = "studentID")]
+pub struct User {
+    #[serde(rename = "userID")]
     pub id: u128,
+
+    #[serde(rename = "principalID")]
+    pub principal_id: String,
 
     pub name: String,
 
@@ -93,7 +96,7 @@ pub struct Student {
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
-pub struct NewStudent {
+pub struct NewUser {
     pub name: String,
 
     pub email: String,

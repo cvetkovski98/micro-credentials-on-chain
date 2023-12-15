@@ -10,7 +10,7 @@ import {
 import * as Yup from "yup";
 import { TextField, TextAreaField, SelectField } from "../fields";
 import { XIcon } from "../icons/XIcon";
-import { Claim, Organisation, Student } from "../../badges/models";
+import { Claim, Organisation, User } from "../../badges/models";
 
 export interface BadgeFormValues {
   title: string;
@@ -24,10 +24,10 @@ export interface BadgeFormValues {
 interface BadgeFormProps {
   onSubmit: (
     values: BadgeFormValues,
-    helpers: FormikHelpers<BadgeFormValues>,
+    helpers: FormikHelpers<BadgeFormValues>
   ) => void;
   organisations: Organisation[];
-  students: Student[];
+  users: User[];
   disabled?: boolean;
 }
 
@@ -37,13 +37,13 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
       title: "",
       badgeType: 0,
       issuerID: props.organisations[0]?.organisationID,
-      ownerID: props.students[0]?.studentID,
+      ownerID: props.users[0]?.userID,
       claims: [],
     },
     enableReinitialize: true,
     onSubmit: (
       values: BadgeFormValues,
-      helpers: FormikHelpers<BadgeFormValues>,
+      helpers: FormikHelpers<BadgeFormValues>
     ) => {
       props.onSubmit(values, helpers);
     },
@@ -70,7 +70,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
         Yup.object({
           key: Yup.string().required("Required"),
           value: Yup.string().required("Required"),
-        }).required("Required"),
+        }).required("Required")
       ),
     }),
   };
@@ -116,9 +116,9 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
           <div className="w-full md:w-2/3 px-3 mb-6 md:mb-0">
             <SelectField
               name="ownerID"
-              label="Student"
-              options={props.students.map((s) => ({
-                value: s.studentID,
+              label="User"
+              options={props.users.map((s) => ({
+                value: s.userID,
                 label: s.name,
               }))}
               disabled={props.disabled}
@@ -168,7 +168,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
                       </button>
                     </div>
                   </div>
-                ),
+                )
               )}
               <div className="flex justify-end">
                 <button

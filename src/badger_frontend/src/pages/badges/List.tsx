@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BadgeTable } from "../../components/badges/BadgeTable";
-import { Badge, TEST_STUDENT_ID, isOK } from "../../badges/models";
+import { Badge, TEST_USER_ID, isOK } from "../../badges/models";
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { Link } from "react-router-dom";
 import { useBackendActor } from "../../context/Global";
@@ -15,7 +15,7 @@ export const BadgeListPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    RemoteBadgesAPI.getAll(TEST_STUDENT_ID)
+    RemoteBadgesAPI.getAll(TEST_USER_ID)
       .then((value) => {
         if (isOK(value)) setBadges(value.ok);
         else setError(value.error);

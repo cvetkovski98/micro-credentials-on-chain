@@ -44,15 +44,15 @@ export interface NewOrganisationRequest {
   name: string;
 }
 
-export interface Student {
-  studentID: bigint;
+export interface User {
+  userID: bigint;
   name: string;
   email: string;
   organisationID: number;
   createdAt: string;
 }
 
-export interface NewStudentRequest {
+export interface NewUserRequest {
   name: string;
   email: string;
   organisationID: bigint;
@@ -62,4 +62,4 @@ export interface FileLocation {
   location: string;
 }
 
-export const TEST_STUDENT_ID = 1n;
+export const TEST_USER_ID = 1n;

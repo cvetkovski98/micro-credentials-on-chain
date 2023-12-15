@@ -1,22 +1,18 @@
 use candid::Principal;
-use ic_cdk::api::caller as caller_api;
+use ic_cdk::api::caller;
 
-use crate::{NEXT_BADGE_ID, NEXT_ORGANISATION_ID, NEXT_ROLE_ID, NEXT_STUDENT_ID};
+use crate::{NEXT_BADGE_ID, NEXT_ORGANISATION_ID, NEXT_ROLE_ID, NEXT_USER_ID};
 
-pub fn caller() -> Principal {
-    let caller = caller_api();
-    if caller == Principal::anonymous() {
-        println!(
-            "Caller is anonymous. Caller is {}. Anon is {}.",
-            caller,
-            Principal::anonymous()
-        );
+pub fn authenticate_caller() -> Principal {
+    let principal = caller();
+    if principal == Principal::anonymous() {
+        panic!("Anonymous caller not allowed.");
     }
-    caller
+    principal
 }
 
-pub fn next_student_id() -> u128 {
-    NEXT_STUDENT_ID.with(|id| {
+pub fn next_user_id() -> u128 {
+    NEXT_USER_ID.with(|id| {
         let mut id = id.borrow_mut();
         *id += 1;
         *id

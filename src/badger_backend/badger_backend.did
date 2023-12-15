@@ -34,15 +34,15 @@ type NewOrganisation = record {
     name : text;
 };
 
-type Student = record {
-    studentID : nat;
+type User = record {
+    userID : nat;
     name : text;
     email : text;
     organisationID : nat;
     createdAt : nat64;
 };
 
-type NewStudentRequest = record {
+type NewUserRequest = record {
     name : text;
     email : text;
     organisationID : nat;
@@ -77,23 +77,23 @@ type OrganisationCreateOneResponse = variant {
     error : text;
 };
 
-type StudentGetAllResponse = variant {
-    ok : vec Student;
+type UserGetAllResponse = variant {
+    ok : vec User;
     error : text;
 };
 
-type StudentGetOneResponse = variant {
-    ok : Student;
+type UserGetOneResponse = variant {
+    ok : User;
     error : text;
 };
 
-type StudentDeleteOneResponse = variant {
+type UserDeleteOneResponse = variant {
     ok : bool;
     error : text;
 };
 
-type StudentCreateOneResponse = variant {
-    ok : Student;
+type UserCreateOneResponse = variant {
+    ok : User;
     error : text;
 };
 
@@ -139,18 +139,18 @@ service badger : {
     organisations_delete_one : (id : nat) -> (OrganisationDeleteOneResponse);
     organisations_create_one : (organisation : NewOrganisation) -> (OrganisationCreateOneResponse);
 
-    // students
-    students_get_all : () -> (StudentGetAllResponse);
-    students_get_one : (id : nat) -> (StudentGetOneResponse);
-    students_delete_one : (id : nat) -> (StudentDeleteOneResponse);
-    students_create_one : (student : NewStudentRequest) -> (StudentCreateOneResponse);
+    // users
+    users_get_all : () -> (UserGetAllResponse);
+    users_get_one : (id : nat) -> (UserGetOneResponse);
+    users_delete_one : (id : nat) -> (UserDeleteOneResponse);
+    users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
 
     // badges
-    badges_get_all : (student_id : nat) -> (BadgeGetAllResponse);
-    badges_get_one : (student_id : nat, id : nat) -> (BadgeGetOneResponse);
-    badges_delete_one : (student_id : nat, id : nat) -> (BadgeDeleteOneResponse);
+    badges_get_all : (user_id : nat) -> (BadgeGetAllResponse);
+    badges_get_one : (user_id : nat, id : nat) -> (BadgeGetOneResponse);
+    badges_delete_one : (user_id : nat, id : nat) -> (BadgeDeleteOneResponse);
     badges_create_one : (badge : NewBadge) -> (BadgeCreateOneResponse);
-    badges_get_qr_code : (student_id : nat, id : nat) -> (BadgeGetQRCodeResponse);
+    badges_get_qr_code : (user_id : nat, id : nat) -> (BadgeGetQRCodeResponse);
 
     // roles
     roles_get_all : () -> (vec RoleGetAllResponse);

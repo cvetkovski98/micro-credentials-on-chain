@@ -2,17 +2,17 @@ import {
   Badge,
   NewBadgeRequest,
   NewOrganisationRequest,
-  NewStudentRequest,
+  NewUserRequest,
   Organisation,
   Result,
-  Student,
+  User,
 } from "../models";
 
 export interface BadgesAPI {
-  getAll(studentID: bigint): Promise<Result<Badge[]>>;
-  getOne(studentID: bigint, id: bigint): Promise<Result<Badge>>;
+  getAll(userID: bigint): Promise<Result<Badge[]>>;
+  getOne(userID: bigint, id: bigint): Promise<Result<Badge>>;
   createOne(badge: NewBadgeRequest): Promise<Result<Badge>>;
-  deleteOne(studentID: bigint, id: bigint): Promise<Result<boolean>>;
+  deleteOne(userID: bigint, id: bigint): Promise<Result<boolean>>;
 }
 
 export interface OrganisationsAPI {
@@ -22,9 +22,9 @@ export interface OrganisationsAPI {
   deleteOne(id: bigint): Promise<Result<void>>;
 }
 
-export interface StudentsAPI {
-  getAll(): Promise<Result<Student[]>>;
-  getOne(id: bigint): Promise<Result<Student>>;
-  createOne(student: NewStudentRequest): Promise<Result<Student>>;
+export interface UsersAPI {
+  getAll(): Promise<Result<User[]>>;
+  getOne(id: bigint): Promise<Result<User>>;
+  createOne(user: NewUserRequest): Promise<Result<User>>;
   deleteOne(id: bigint): Promise<Result<void>>;
 }
