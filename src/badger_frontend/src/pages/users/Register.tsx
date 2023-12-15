@@ -4,11 +4,12 @@ import { organisationsAPI } from "../../badges/api/remote/organisations";
 import { usersAPI } from "../../badges/api/remote/users";
 import { NewUserRequest, Organisation, isOK } from "../../badges/models";
 import { UserForm, UserFormValues } from "../../components/forms/UserForm";
-import { useBackendActor } from "../../context/Global";
+import { useBackendActor, useUserSetter } from "../../context/Global";
 
-export const UserCreatePage: React.FC = () => {
+export const UserRegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const actor = useBackendActor();
+  const updateUser = useUserSetter();
 
   const RemoteOrganisationsAPI = organisationsAPI(actor);
   const RemoteUsersAPI = usersAPI(actor);
@@ -45,6 +46,7 @@ export const UserCreatePage: React.FC = () => {
       .then((resp) => {
         if (isOK(resp)) {
           setSuccess("User created successfully");
+          updateUser(resp.ok);
           setTimeout(() => {
             navigate("/badges");
           }, 2000);

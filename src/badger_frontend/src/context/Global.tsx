@@ -11,6 +11,7 @@ const CANISTER_ID_BADGER_BACKEND = process.env.CANISTER_ID_BADGER_BACKEND;
 export interface GlobalContextType {
   client?: AuthClient;
   user?: User;
+  setUser?: (u: User) => void;
   backend?: BackendActor;
   identity?: IdentityActor;
 }
@@ -94,6 +95,7 @@ export const GlobalContextProvider: React.FC<PropsWithChildren<GlobalContextType
         client,
         backend,
         identity,
+        setUser,
       }}
     >
       {props.children}
@@ -125,7 +127,12 @@ export const useIdentityActor = (): IdentityActor => {
   return context.identity;
 };
 
-export const useUser = (): User | undefined => {
+export const useUser = (): User => {
   const context = React.useContext(GlobalContext);
   return context.user;
+};
+
+export const useUserSetter = (): ((u: User) => void) => {
+  const context = React.useContext(GlobalContext);
+  return context.setUser!!;
 };

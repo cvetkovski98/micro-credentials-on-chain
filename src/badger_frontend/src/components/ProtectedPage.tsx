@@ -14,7 +14,7 @@ export const ProtectedPage: React.FC<PropsWithChildren> = ({ children }) => {
       if (!isAuthenticated) {
         navigate("/");
       } else if (!user) {
-        navigate("/users/create");
+        navigate("/users/register");
       }
 
       setLoading((_) => false);

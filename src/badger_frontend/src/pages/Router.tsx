@@ -7,7 +7,7 @@ import { Layout } from "./Layout";
 import { BadgeCreatePage } from "./badges/Create";
 import { BadgeDetailsPage } from "./badges/Details";
 import { BadgeListPage } from "./badges/List";
-import { UserCreatePage } from "./users/Create";
+import { UserRegisterPage } from "./users/Register";
 
 export const PageRouter = createHashRouter([
   {
@@ -45,10 +45,10 @@ export const PageRouter = createHashRouter([
         ),
       },
       {
-        path: "users/create",
+        path: "users/register",
         element: (
           <ProtectedPage>
-            <UserCreatePage />
+            <UserRegisterPage />
           </ProtectedPage>
         ),
       },
