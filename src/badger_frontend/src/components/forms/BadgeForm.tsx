@@ -24,10 +24,11 @@ export interface BadgeFormValues {
 interface BadgeFormProps {
   onSubmit: (
     values: BadgeFormValues,
-    helpers: FormikHelpers<BadgeFormValues>
+    helpers: FormikHelpers<BadgeFormValues>,
   ) => void;
   organisations: Organisation[];
   students: Student[];
+  disabled?: boolean;
 }
 
 export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
@@ -42,7 +43,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
     enableReinitialize: true,
     onSubmit: (
       values: BadgeFormValues,
-      helpers: FormikHelpers<BadgeFormValues>
+      helpers: FormikHelpers<BadgeFormValues>,
     ) => {
       props.onSubmit(values, helpers);
     },
@@ -69,7 +70,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
         Yup.object({
           key: Yup.string().required("Required"),
           value: Yup.string().required("Required"),
-        }).required("Required")
+        }).required("Required"),
       ),
     }),
   };
@@ -84,7 +85,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
         </div>
         <div className="flex flex-wrap -mx-3 mb-3">
           <div className="w-full md:w-2/3 px-3 mb-6 md:mb-0">
-            <TextField name="title" label="Title" />
+            <TextField name="title" label="Title" disabled={props.disabled} />
           </div>
           <div className="w-full md:w-1/3 px-3">
             <SelectField
@@ -94,6 +95,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
                 { value: 0, label: "Goal" },
                 { value: 1, label: "Package" },
               ]}
+              disabled={props.disabled}
             />
           </div>
         </div>
@@ -106,6 +108,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
                 value: o.organisationID,
                 label: o.name,
               }))}
+              disabled={props.disabled}
             />
           </div>
         </div>
@@ -118,10 +121,16 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
                 value: s.studentID,
                 label: s.name,
               }))}
+              disabled={props.disabled}
             />
           </div>
         </div>
-        <TextAreaField name="description" label="Description" rows={5} />
+        <TextAreaField
+          name="description"
+          label="Description"
+          rows={5}
+          disabled={props.disabled}
+        />
         <div className="flex flex-wrap -mx-3 my-3">
           <div className="w-full px-3">
             <h2 className="text-lg font-bold">Claims</h2>
@@ -135,27 +144,37 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
                 (_: Claim, index: number) => (
                   <div className="flex flex-wrap -mx-3 mb-3" key={index}>
                     <div className="w-4/12 px-3 mb-6 md:mb-0">
-                      <TextField name={`claims.${index}.key`} label="Key" />
+                      <TextField
+                        name={`claims.${index}.key`}
+                        label="Key"
+                        disabled={props.disabled}
+                      />
                     </div>
                     <div className="w-7/12 px-3">
-                      <TextField name={`claims.${index}.value`} label="Value" />
+                      <TextField
+                        name={`claims.${index}.value`}
+                        label="Value"
+                        disabled={props.disabled}
+                      />
                     </div>
                     <div className="w-1/12 px-3 flex items-end justify-center">
                       <button
                         className="p-1 mb-4 text-white bg-red-600 rounded-md align hover:bg-red-700"
                         type="button"
+                        disabled={props.disabled}
                         onClick={() => arrayHelpers.remove(index)}
                       >
                         <XIcon />
                       </button>
                     </div>
                   </div>
-                )
+                ),
               )}
               <div className="flex justify-end">
                 <button
                   className="px-2 py-1 text-white bg-gray-800 rounded-md"
                   type="button"
+                  disabled={props.disabled}
                   onClick={() => arrayHelpers.push({ key: "", value: "" })}
                 >
                   Add Claim

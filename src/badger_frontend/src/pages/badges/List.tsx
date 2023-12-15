@@ -3,7 +3,7 @@ import { BadgeTable } from "../../components/badges/BadgeTable";
 import { Badge, TEST_STUDENT_ID, isOK } from "../../badges/models";
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { Link } from "react-router-dom";
-import { useBackendActor } from "../../context/ActorContext";
+import { useBackendActor } from "../../context/Global";
 
 export const BadgeListPage: React.FC = () => {
   const actor = useBackendActor();

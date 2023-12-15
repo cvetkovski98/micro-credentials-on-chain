@@ -10,7 +10,7 @@ import {
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { organisationsAPI } from "../../badges/api/remote/organisations";
 import { studentsAPI } from "../../badges/api/remote/students";
-import { useBackendActor } from "../../context/ActorContext";
+import { useBackendActor } from "../../context/Global";
 
 export const BadgeDetailsPage: React.FC = () => {
   const badgeID = useParams<{ id: string }>().id || "";

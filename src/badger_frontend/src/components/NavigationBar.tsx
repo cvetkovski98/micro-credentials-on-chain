@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { useBackendActor } from "../context/ActorContext";
-import { useClient } from "../context/AuthContext";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useClient } from "../context/Global";
 import { XIcon } from "./icons/XIcon";
 
 const routes = [
@@ -12,7 +11,7 @@ const routes = [
 ];
 
 export interface ItemProps extends React.PropsWithChildren {
-  to: string;
+  to?: string;
   mobile?: boolean;
 }
 
@@ -38,15 +37,20 @@ interface NavBarProps {
 
 export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
   const client = useClient();
-  const actor = useBackendActor();
-  const [i, setI] = React.useState("");
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
   useEffect(() => {
-    actor.whoami().then((i) => {
-      console.log(`Received ${i} from actor.whoami()`);
-      setI(i);
+    client.isAuthenticated().then((isAuthenticated) => {
+      setIsAuthenticated((_) => isAuthenticated);
     });
-  });
+  }, [client.getIdentity()]);
+
+  const logout = () => {
+    client.logout();
+    navigate("/");
+    window.location.reload();
+  };
 
   return (
     <nav className="bg-gray-800">
@@ -73,30 +77,26 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
                 alt="Workflow"
               />
               <span className="ml-4 text-white font-bold">
-                ZHAW Micro-Credentials On Chain {i}
+                ZHAW Micro-Credentials On Chain
               </span>
             </Link>
             <div className="hidden ml-auto sm:ml-6 sm:flex">
               <div className="flex space-x-4">
-                {routes.map((route) => (
-                  <Item key={route.path} to={route.path}>
-                    {route.label}
-                  </Item>
-                ))}
+                {isAuthenticated && (
+                  <React.Fragment>
+                    {routes.map((route) => (
+                      <Item key={route.path} to={route.path}>
+                        {route.label}
+                      </Item>
+                    ))}
+                    <Item>
+                      <button type="button" onClick={logout}>
+                        Log out
+                      </button>
+                    </Item>
+                  </React.Fragment>
+                )}
               </div>
-            </div>
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  client.logout({
-                    returnTo: window.location.origin,
-                  });
-                }}
-                className="ml-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Log out
-              </button>
             </div>
           </div>
         </div>

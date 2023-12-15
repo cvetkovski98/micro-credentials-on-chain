@@ -14,7 +14,8 @@
     "start": "webpack serve --mode development --env development",
     "deploy:local": "dfx deploy --network=local",
     "deploy:ic": "dfx deploy --network=ic",
-    "generate": "dfx generate badger_backend"
+    "generate": "dfx generate badger_backend",
+    "format": "npx prettier --write src/badger_frontend/**/*.ts src/badger_frontend/**/*.tsx"
   },
   "dependencies": {
     "@dfinity/agent": "^0.20.2",
@@ -44,6 +45,7 @@
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",
     "postcss-preset-env": "^9.2.0",
+    "prettier": "^3.1.1",
     "process": "0.11.10",
     "stream-browserify": "3.0.0",
     "style-loader": "^3.3.3",
