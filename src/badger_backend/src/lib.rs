@@ -124,6 +124,19 @@ fn users_create_one(user: NewUser) -> Response<User> {
         ));
     }
 
+    let mut roles: Vec<Role> = vec![];
+
+    for role_id in &user.roles {
+        let role: Option<Role> = ROLES.with(|roles| roles.borrow().get(role_id).cloned());
+        println!("Role: {:?}", role);
+        match role {
+            Some(role) => roles.push(role),
+            None => {
+                return Response::Err(format!("Role with id {} not found.", role_id));
+            }
+        }
+    }
+
     let id = next_user_id();
     let inserted = User {
         id: id.clone(),
@@ -131,6 +144,7 @@ fn users_create_one(user: NewUser) -> Response<User> {
         name: user.name.clone(),
         email: user.email.clone(),
         organisation_id: user.organisation_id,
+        roles,
         created_at: time(),
     };
 
@@ -300,25 +314,4 @@ fn init() {
         roles.insert(lecturer_role.id, lecturer_role);
         roles.insert(admin_role.id, admin_role);
     });
-
-    // TODO: Remove this once we have a login system.
-    for i in 1..=9 {
-        let user = User {
-            id: next_user_id(),
-            principal_id: String::from(format!("user_{}", i)),
-            name: String::from(format!("Student {}", i)),
-            email: String::from(format!("sudent_{}@students.mse.ch", i)),
-            organisation_id: match i {
-                1..=3 => zhaw_id,
-                4..=6 => eth_id,
-                7..=9 => uzh_id,
-                _ => panic!("Invalid student id."),
-            },
-            created_at: time(),
-        };
-        USERS.with(|users| {
-            let mut users = users.borrow_mut();
-            users.insert(user.id, user);
-        });
-    }
 }

@@ -49,6 +49,7 @@ export interface User {
   name: string;
   email: string;
   organisationID: number;
+  roles: Role[];
   createdAt: string;
 }
 
@@ -56,8 +57,14 @@ export interface NewUserRequest {
   name: string;
   email: string;
   organisationID: bigint;
+  roles: bigint[];
 }
 
 export interface FileLocation {
   location: string;
+}
+
+export interface Role {
+  roleID: bigint;
+  name: string;
 }

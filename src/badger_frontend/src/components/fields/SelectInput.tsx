@@ -1,8 +1,8 @@
 import { useFormikContext } from "formik";
 import React from "react";
 
-interface SelectInputOption {
-  value: string | number | bigint;
+export interface SelectInputOption {
+  value: number | bigint;
   label: string;
 }
 

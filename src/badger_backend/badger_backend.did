@@ -39,12 +39,14 @@ type User = record {
     name : text;
     email : text;
     organisationID : nat;
+    roles : vec Role;
     createdAt : nat64;
 };
 
 type NewUserRequest = record {
     name : text;
     email : text;
+    roles : vec nat;
     organisationID : nat;
 };
 
@@ -154,7 +156,7 @@ service badger : {
     badges_get_qr_code : (user_id : nat, id : nat) -> (BadgeGetQRCodeResponse);
 
     // roles
-    roles_get_all : () -> (vec RoleGetAllResponse);
+    roles_get_all : () -> (RoleGetAllResponse);
 
     // whoami
     whoami : () -> (text);

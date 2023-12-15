@@ -1,18 +1,21 @@
 import { Form, Formik, FormikConfig, FormikHelpers } from "formik";
 import React from "react";
 import * as Yup from "yup";
-import { Organisation } from "../../badges/models";
+import { Organisation, Role } from "../../badges/models";
 import { SelectField, TextField } from "../fields";
+import { MultiSelectField } from "../fields/MultiSelectInput";
 
 export interface UserFormValues {
   name: string;
   email: string;
   organisationID: bigint;
+  roles: bigint[];
 }
 
 interface UserFormProps {
   onSubmit: (values: UserFormValues, helpers: FormikHelpers<UserFormValues>) => void;
   organisations: Organisation[];
+  roles: Role[];
   disabled?: boolean;
 }
 
@@ -22,12 +25,18 @@ export const UserForm: React.FC<UserFormProps> = (props) => {
       name: "",
       email: "",
       organisationID: props.organisations[0]?.organisationID,
+      roles: [],
     },
     enableReinitialize: true,
     onSubmit: (values: UserFormValues, helpers: FormikHelpers<UserFormValues>) => {
       props.onSubmit(values, helpers);
     },
-    validationSchema: Yup.object({}),
+    validationSchema: Yup.object({
+      name: Yup.string().required("User's full name is required"),
+      email: Yup.string().email("Invalid email address").required("Email is required"),
+      organisationID: Yup.number().required("Organisation is required").typeError("Organisation must be a number"),
+      roles: Yup.array().of(Yup.number()).required("Roles are required").typeError("Role must be a number"),
+    }),
   };
 
   return (
@@ -56,6 +65,19 @@ export const UserForm: React.FC<UserFormProps> = (props) => {
               options={props.organisations.map((o) => ({
                 value: o.organisationID,
                 label: o.name,
+              }))}
+              disabled={props.disabled}
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap -mx-3 mb-3">
+          <div className="w-full px-3 mb-6 md:mb-0">
+            <MultiSelectField
+              name="roles"
+              label="Roles"
+              options={props.roles.map((r) => ({
+                value: r.roleID,
+                label: r.name,
               }))}
               disabled={props.disabled}
             />

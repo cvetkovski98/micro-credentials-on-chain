@@ -1,4 +1,13 @@
-import { Badge, NewBadgeRequest, NewOrganisationRequest, NewUserRequest, Organisation, Result, User } from "../models";
+import {
+  Badge,
+  NewBadgeRequest,
+  NewOrganisationRequest,
+  NewUserRequest,
+  Organisation,
+  Result,
+  Role,
+  User,
+} from "../models";
 
 export interface BadgesAPI {
   getAll(userID: bigint): Promise<Result<Badge[]>>;
@@ -20,4 +29,5 @@ export interface UsersAPI {
   getWhoAmI(): Promise<Result<User>>;
   createOne(user: NewUserRequest): Promise<Result<User>>;
   deleteOne(id: bigint): Promise<Result<void>>;
+  getAllRoles(): Promise<Result<Role[]>>;
 }

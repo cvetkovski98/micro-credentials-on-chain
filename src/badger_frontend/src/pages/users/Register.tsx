@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { organisationsAPI } from "../../badges/api/remote/organisations";
 import { usersAPI } from "../../badges/api/remote/users";
-import { NewUserRequest, Organisation, isOK } from "../../badges/models";
+import { NewUserRequest, Organisation, Role, isOK } from "../../badges/models";
 import { UserForm, UserFormValues } from "../../components/forms/UserForm";
 import { useBackendActor, useUserSetter } from "../../context/Global";
 
@@ -15,12 +15,17 @@ export const UserRegisterPage: React.FC = () => {
   const RemoteUsersAPI = usersAPI(actor);
 
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [orgLoading, setOrgLoading] = useState(false);
+
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
+  function loadOrganisations() {
+    setOrgLoading(true);
     RemoteOrganisationsAPI.getAll()
       .then((value) => {
         if (isOK(value)) setOrganisations(value.ok);
@@ -30,17 +35,38 @@ export const UserRegisterPage: React.FC = () => {
         setError(error.message);
       })
       .finally(() => {
-        setLoading(false);
+        setOrgLoading(false);
       });
+  }
+
+  function loadRoles() {
+    setRolesLoading(true);
+    RemoteUsersAPI.getAllRoles()
+      .then((value) => {
+        if (isOK(value)) setRoles(value.ok);
+        else setError(value.error);
+      })
+      .catch((error) => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setRolesLoading(false);
+      });
+  }
+
+  useEffect(() => {
+    loadOrganisations();
+    loadRoles();
   }, []);
 
   const handleSubmit = (values: UserFormValues) => {
     const payload: NewUserRequest = {
       ...values,
       organisationID: BigInt(values.organisationID),
+      roles: values.roles.map((r) => BigInt(r)),
     };
 
-    setLoading(true);
+    setSubmitting(true);
 
     RemoteUsersAPI.createOne(payload)
       .then((resp) => {
@@ -55,7 +81,7 @@ export const UserRegisterPage: React.FC = () => {
         }
       })
       .finally(() => {
-        setLoading(false);
+        setSubmitting(false);
       });
   };
 
@@ -74,7 +100,17 @@ export const UserRegisterPage: React.FC = () => {
             <span className="block sm:inline"> {success}</span>
           </div>
         )}
-        <UserForm onSubmit={handleSubmit} organisations={organisations} disabled={loading} />
+        {submitting && (
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Submitting...</strong>
+          </div>
+        )}
+        <UserForm
+          onSubmit={handleSubmit}
+          organisations={organisations}
+          roles={roles}
+          disabled={orgLoading || rolesLoading || submitting}
+        />
       </div>
     </React.Fragment>
   );

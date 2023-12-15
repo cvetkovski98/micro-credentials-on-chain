@@ -93,6 +93,8 @@ pub struct User {
 
     #[serde(rename = "createdAt")]
     pub created_at: u64,
+
+    pub roles: Vec<Role>,
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
@@ -103,6 +105,8 @@ pub struct NewUser {
 
     #[serde(rename = "organisationID")]
     pub organisation_id: u128,
+
+    pub roles: Vec<u128>,
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]

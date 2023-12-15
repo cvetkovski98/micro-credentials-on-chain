@@ -1,5 +1,5 @@
 import { BackendActor } from "../../../lib/backend";
-import { NewUserRequest, Result, User } from "../../models";
+import { NewUserRequest, Result, Role, User } from "../../models";
 import { UsersAPI } from "../api";
 
 export const usersAPI = (actor: BackendActor): UsersAPI => ({
@@ -17,5 +17,8 @@ export const usersAPI = (actor: BackendActor): UsersAPI => ({
   },
   async deleteOne(id: bigint): Promise<Result<void>> {
     return (await actor.users_delete_one(id)) as Result<void>;
+  },
+  async getAllRoles(): Promise<Result<Array<Role>>> {
+    return (await actor.roles_get_all()) as Result<Array<Role>>;
   },
 });
