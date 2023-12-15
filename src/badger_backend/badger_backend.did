@@ -1,0 +1,160 @@
+type Claim = record {
+    key : text;
+    value : text;
+};
+
+type Badge = record {
+    badgeID : nat;
+    title : text;
+    description : opt text;
+    badgeType : nat16;
+    issuerID : nat;
+    ownerID : nat;
+    claims : vec Claim;
+    signedBy : vec nat;
+    createdAt : nat64;
+};
+
+type NewBadge = record {
+    title : text;
+    description : opt text;
+    badgeType : nat16;
+    issuerID : nat;
+    ownerID : nat;
+    claims : vec Claim;
+};
+
+type Organisation = record {
+    organisationID : nat;
+    name : text;
+    createdAt : nat64;
+};
+
+type NewOrganisation = record {
+    name : text;
+};
+
+type Student = record {
+    studentID : nat;
+    name : text;
+    email : text;
+    organisationID : nat;
+    createdAt : nat64;
+};
+
+type NewStudentRequest = record {
+    name : text;
+    email : text;
+    organisationID : nat;
+};
+
+type FileLocation = record {
+    location : text;
+};
+
+type Role = record {
+    roleID : nat;
+    name : text;
+};
+
+type OrganisationGetAllResponse = variant {
+    ok : vec Organisation;
+    error : text;
+};
+
+type OrganisationGetOneResponse = variant {
+    ok : Organisation;
+    error : text;
+};
+
+type OrganisationDeleteOneResponse = variant {
+    ok : bool;
+    error : text;
+};
+
+type OrganisationCreateOneResponse = variant {
+    ok : Organisation;
+    error : text;
+};
+
+type StudentGetAllResponse = variant {
+    ok : vec Student;
+    error : text;
+};
+
+type StudentGetOneResponse = variant {
+    ok : Student;
+    error : text;
+};
+
+type StudentDeleteOneResponse = variant {
+    ok : bool;
+    error : text;
+};
+
+type StudentCreateOneResponse = variant {
+    ok : Student;
+    error : text;
+};
+
+type BadgeGetAllResponse = variant {
+    ok : vec Badge;
+    error : text;
+};
+
+type BadgeGetOneResponse = variant {
+    ok : Badge;
+    error : text;
+};
+
+type BadgeDeleteOneResponse = variant {
+    ok : bool;
+    error : text;
+};
+
+type BadgeVerifyOneResponse = variant {
+    ok : bool;
+    error : text;
+};
+
+type BadgeCreateOneResponse = variant {
+    ok : Badge;
+    error : text;
+};
+
+type BadgeGetQRCodeResponse = variant {
+    ok : FileLocation;
+    error : text;
+};
+
+type RoleGetAllResponse = variant {
+    ok : vec Role;
+    error : text;
+};
+
+service badger : {
+    // organisations
+    organisations_get_all : () -> (OrganisationGetAllResponse);
+    organisations_get_one : (id : nat) -> (OrganisationGetOneResponse);
+    organisations_delete_one : (id : nat) -> (OrganisationDeleteOneResponse);
+    organisations_create_one : (organisation : NewOrganisation) -> (OrganisationCreateOneResponse);
+
+    // students
+    students_get_all : () -> (StudentGetAllResponse);
+    students_get_one : (id : nat) -> (StudentGetOneResponse);
+    students_delete_one : (id : nat) -> (StudentDeleteOneResponse);
+    students_create_one : (student : NewStudentRequest) -> (StudentCreateOneResponse);
+
+    // badges
+    badges_get_all : (student_id : nat) -> (BadgeGetAllResponse);
+    badges_get_one : (student_id : nat, id : nat) -> (BadgeGetOneResponse);
+    badges_delete_one : (student_id : nat, id : nat) -> (BadgeDeleteOneResponse);
+    badges_create_one : (badge : NewBadge) -> (BadgeCreateOneResponse);
+    badges_get_qr_code : (student_id : nat, id : nat) -> (BadgeGetQRCodeResponse);
+
+    // roles
+    roles_get_all : () -> (vec RoleGetAllResponse);
+
+    // whoami
+    whoami : () -> (text);
+};

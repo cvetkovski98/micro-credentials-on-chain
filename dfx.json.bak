@@ -1,0 +1,37 @@
+{
+  "canisters": {
+    "badger_frontend": {
+      "frontend": {
+        "entrypoint": "src/badger_frontend/src/index.html"
+      },
+      "source": [
+        "src/badger_frontend/assets",
+        "dist/badger_frontend/"
+      ],
+      "type": "assets"
+    },
+    "badger_backend": {
+      "type": "rust",
+      "candid": "src/badger_backend/badger_backend.did",
+      "package": "badger_backend"
+    },
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      }
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
