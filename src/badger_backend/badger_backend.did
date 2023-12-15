@@ -142,6 +142,7 @@ service badger : {
     // users
     users_get_all : () -> (UserGetAllResponse);
     users_get_one : (id : nat) -> (UserGetOneResponse);
+    users_get_one_by_principal : (pid : text) -> (UserGetOneResponse);
     users_delete_one : (id : nat) -> (UserDeleteOneResponse);
     users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
 

@@ -1,12 +1,13 @@
 import React from "react";
 import { createHashRouter } from "react-router-dom";
-import { Layout } from "./Layout";
-import { BadgeListPage } from "./badges/List";
-import { BadgeCreatePage } from "./badges/Create";
-import { BadgeDetailsPage } from "./badges/Details";
+import { ProtectedPage } from "../components/ProtectedPage";
 import { ErrorPage } from "./ErrorPage";
 import { LandingPage } from "./LandingPage";
-import { ProtectedPage } from "../components/ProtectedPage";
+import { Layout } from "./Layout";
+import { BadgeCreatePage } from "./badges/Create";
+import { BadgeDetailsPage } from "./badges/Details";
+import { BadgeListPage } from "./badges/List";
+import { UserCreatePage } from "./users/Create";
 
 export const PageRouter = createHashRouter([
   {
@@ -40,6 +41,14 @@ export const PageRouter = createHashRouter([
         element: (
           <ProtectedPage>
             <BadgeDetailsPage />
+          </ProtectedPage>
+        ),
+      },
+      {
+        path: "users/create",
+        element: (
+          <ProtectedPage>
+            <UserCreatePage />
           </ProtectedPage>
         ),
       },

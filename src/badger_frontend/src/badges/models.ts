@@ -61,5 +61,3 @@ export interface NewUserRequest {
 export interface FileLocation {
   location: string;
 }
-
-export const TEST_USER_ID = 1n;

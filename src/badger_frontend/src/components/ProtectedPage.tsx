@@ -1,10 +1,11 @@
 import React, { PropsWithChildren, useEffect } from "react";
-import { useClient } from "../context/Global";
 import { useNavigate } from "react-router-dom";
+import { useClient, useUser } from "../context/Global";
 
 export const ProtectedPage: React.FC<PropsWithChildren> = ({ children }) => {
   const navigate = useNavigate();
   const client = useClient();
+  const user = useUser();
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -12,7 +13,10 @@ export const ProtectedPage: React.FC<PropsWithChildren> = ({ children }) => {
     client.isAuthenticated().then((isAuthenticated) => {
       if (!isAuthenticated) {
         navigate("/");
+      } else if (!user) {
+        navigate("/users/create");
       }
+
       setLoading((_) => false);
     });
   }, []);

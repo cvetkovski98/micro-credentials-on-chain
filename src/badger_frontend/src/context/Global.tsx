@@ -1,55 +1,102 @@
-import React, { PropsWithChildren, useEffect } from "react";
-import {
-  BackendActor,
-  IdentityActor,
-  createBackendActor,
-  createIdentityActor,
-} from "../lib/backend";
 import { HttpAgent } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
+import React, { PropsWithChildren, useEffect } from "react";
+import { usersAPI } from "../badges/api/remote/users";
+import { User, isOK } from "../badges/models";
+import { BackendActor, IdentityActor, createBackendActor, createIdentityActor } from "../lib/backend";
 
 const CANISTER_ID_IDENTITY = process.env.CANISTER_ID_INTERNET_IDENTITY;
 const CANISTER_ID_BADGER_BACKEND = process.env.CANISTER_ID_BADGER_BACKEND;
 
 export interface GlobalContextType {
   client?: AuthClient;
+  user?: User;
   backend?: BackendActor;
   identity?: IdentityActor;
 }
 
-export const GlobalContext: React.Context<GlobalContextType> =
-  React.createContext({});
+export const GlobalContext: React.Context<GlobalContextType> = React.createContext({});
 
-export const GlobalContextProvider: React.FC<
-  PropsWithChildren<GlobalContextType>
-> = (props) => {
+export const GlobalContextProvider: React.FC<PropsWithChildren<GlobalContextType>> = (props) => {
   const [client, setClient] = React.useState<AuthClient>();
-  const [agent, setAgent] = React.useState<HttpAgent>();
+  const [backend, setBackend] = React.useState<BackendActor>();
+  const [identity, setIdentity] = React.useState<IdentityActor>();
+  const [user, setUser] = React.useState<User>();
+
+  const [initialized, setInitialized] = React.useState(false);
+  const [userLoading, setUserLoading] = React.useState(false);
 
   useEffect(() => {
-    AuthClient.create().then((client) => {
-      setClient(client);
-    });
+    setInitialized(() => false);
+
+    console.debug("Started initializing");
+
+    AuthClient.create()
+      .then((client) => {
+        const identity = client.getIdentity();
+        const agent = new HttpAgent({ identity });
+        const backend = createBackendActor(CANISTER_ID_BADGER_BACKEND, { agent });
+        const indentity = createIdentityActor(CANISTER_ID_IDENTITY, { agent });
+
+        setClient(() => client);
+        setBackend(() => backend);
+        setIdentity(() => indentity);
+
+        console.debug("Created AuthClient and set backend and identity actors");
+
+        const principal = identity.getPrincipal();
+        const pid = principal.toString();
+
+        console.debug("Checking if user is authenticated");
+        client.isAuthenticated().then((isAuthenticated) => {
+          if (isAuthenticated) {
+            console.debug("User is authenticated, loading user");
+
+            setUserLoading(() => true);
+            const remoteUsersAPI = usersAPI(backend);
+
+            remoteUsersAPI
+              .getOneByPrincipal(pid)
+              .then((resp) => {
+                if (isOK(resp)) {
+                  console.debug("Loaded user successfully");
+                  setUser(() => resp.ok);
+                } else {
+                  console.debug("Tried to load user but it was not found. Error: ", resp.error);
+                }
+              })
+              .finally(() => {
+                setUserLoading(() => false);
+              });
+          }
+        });
+      })
+      .finally(() => {
+        console.debug("Finished initializing");
+        setInitialized(() => true);
+      });
   }, []);
 
-  useEffect(() => {
-    if (!client) return;
+  if (!initialized || userLoading) {
+    let text = "Initializing app...";
+    if (userLoading) {
+      text = "Loading user...";
+    }
 
-    const identity = client.getIdentity();
-    const agent = new HttpAgent({ identity });
-    setAgent(() => agent);
-  }, [client, client?.getIdentity()]);
-
-  if (!client || !agent) {
-    return <div>Loading...</div>;
+    return (
+      <div className="w-full h-screen flex justify-center items-center">
+        <div>{text}</div>
+      </div>
+    );
   }
 
   return (
     <GlobalContext.Provider
       value={{
+        user,
         client,
-        backend: createBackendActor(CANISTER_ID_BADGER_BACKEND, { agent }),
-        identity: createIdentityActor(CANISTER_ID_IDENTITY, { agent }),
+        backend,
+        identity,
       }}
     >
       {props.children}
@@ -60,7 +107,7 @@ export const GlobalContextProvider: React.FC<
 export const useClient = (): AuthClient => {
   const context = React.useContext(GlobalContext);
   if (context?.client === undefined) {
-    throw new Error("useAuth must be used within a AuthProvider");
+    throw new Error("useClient must be used within a BackendActorProvider");
   }
   return context.client;
 };
@@ -68,9 +115,7 @@ export const useClient = (): AuthClient => {
 export const useBackendActor = (): BackendActor => {
   const context = React.useContext(GlobalContext);
   if (context?.backend === undefined) {
-    throw new Error(
-      "useBackendActor must be used within a BackendActorProvider",
-    );
+    throw new Error("useBackendActor must be used within a BackendActorProvider");
   }
   return context.backend;
 };
@@ -78,9 +123,12 @@ export const useBackendActor = (): BackendActor => {
 export const useIdentityActor = (): IdentityActor => {
   const context = React.useContext(GlobalContext);
   if (context?.identity === undefined) {
-    throw new Error(
-      "useIdentityActor must be used within a BackendActorProvider",
-    );
+    throw new Error("useIdentityActor must be used within a BackendActorProvider");
   }
   return context.identity;
+};
+
+export const useUser = (): User | undefined => {
+  const context = React.useContext(GlobalContext);
+  return context.user;
 };

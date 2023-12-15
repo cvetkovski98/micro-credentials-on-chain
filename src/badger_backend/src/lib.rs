@@ -12,6 +12,8 @@ use std::collections::BTreeMap;
 use util::{authenticate_caller, next_badge_id, next_organisation_id, next_role_id, next_user_id};
 
 thread_local! {
+    pub static PRINCIPALS: RefCell<BTreeMap<Principal, User>> = RefCell::new(BTreeMap::new());
+
     // Organizations
     pub static NEXT_ORGANISATION_ID: RefCell<u128> = RefCell::new(0);
     pub static ORGANISATIONS: RefCell<BTreeMap<u128, Organisation>> = RefCell::new(BTreeMap::new());
@@ -85,6 +87,22 @@ fn users_get_one(id: u128) -> Response<User> {
     })
 }
 
+#[query]
+fn users_get_one_by_principal(principal: String) -> Response<User> {
+    let p = match Principal::from_text(principal) {
+        Ok(principal) => principal,
+        Err(_) => return Response::Err(format!("Invalid principal.")),
+    };
+
+    PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        match principals.get(&p) {
+            Some(user) => Response::Ok(user.clone()),
+            None => Response::Err(format!("User with principal {} not found.", p)),
+        }
+    })
+}
+
 #[update]
 fn users_delete_one(id: u128) -> Response<bool> {
     USERS.with(|users| match users.borrow_mut().remove(&id) {
@@ -110,19 +128,23 @@ fn users_create_one(user: NewUser) -> Response<User> {
     }
 
     let id = next_user_id();
+    let inserted = User {
+        id: id.clone(),
+        principal_id: p.to_string(),
+        name: user.name.clone(),
+        email: user.email.clone(),
+        organisation_id: user.organisation_id,
+        created_at: time(),
+    };
+
+    PRINCIPALS.with(|principals| {
+        let mut principals = principals.borrow_mut();
+        principals.insert(p, inserted.clone());
+    });
 
     USERS.with(|users| {
-        let new_user = User {
-            id: id.clone(),
-            principal_id: p.to_string(),
-            name: user.name,
-            email: user.email,
-            organisation_id: user.organisation_id,
-            created_at: time(),
-        };
-
-        users.borrow_mut().insert(id, new_user.clone());
-        Response::Ok(new_user)
+        users.borrow_mut().insert(id, inserted.clone());
+        Response::Ok(inserted)
     })
 }
 
