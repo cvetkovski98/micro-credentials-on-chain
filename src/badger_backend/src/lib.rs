@@ -88,11 +88,8 @@ fn users_get_one(id: u128) -> Response<User> {
 }
 
 #[query]
-fn users_get_one_by_principal(principal: String) -> Response<User> {
-    let p = match Principal::from_text(principal) {
-        Ok(principal) => principal,
-        Err(_) => return Response::Err(format!("Invalid principal.")),
-    };
+fn users_whoami() -> Response<User> {
+    let p = authenticate_caller();
 
     PRINCIPALS.with(|principals| {
         let principals = principals.borrow();

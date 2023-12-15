@@ -9,8 +9,8 @@ export const usersAPI = (actor: BackendActor): UsersAPI => ({
   async getOne(id: bigint): Promise<Result<User>> {
     return (await actor.users_get_one(id)) as Result<User>;
   },
-  async getOneByPrincipal(principal: string): Promise<Result<User>> {
-    return (await actor.users_get_one_by_principal(principal)) as Result<User>;
+  async getWhoAmI(): Promise<Result<User>> {
+    return (await actor.users_whoami()) as Result<User>;
   },
   async createOne(user: NewUserRequest): Promise<Result<User>> {
     return (await actor.users_create_one(user)) as Result<User>;

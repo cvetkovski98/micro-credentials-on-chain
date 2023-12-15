@@ -43,11 +43,8 @@ export const GlobalContextProvider: React.FC<PropsWithChildren<GlobalContextType
         setIdentity(() => indentity);
 
         console.debug("Created AuthClient and set backend and identity actors");
-
-        const principal = identity.getPrincipal();
-        const pid = principal.toString();
-
         console.debug("Checking if user is authenticated");
+
         client.isAuthenticated().then((isAuthenticated) => {
           if (isAuthenticated) {
             console.debug("User is authenticated, loading user");
@@ -56,7 +53,7 @@ export const GlobalContextProvider: React.FC<PropsWithChildren<GlobalContextType
             const remoteUsersAPI = usersAPI(backend);
 
             remoteUsersAPI
-              .getOneByPrincipal(pid)
+              .getWhoAmI()
               .then((resp) => {
                 if (isOK(resp)) {
                   console.debug("Loaded user successfully");
