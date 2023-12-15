@@ -15,7 +15,7 @@
     "deploy:local": "dfx deploy --network=local",
     "deploy:ic": "dfx deploy --network=ic",
     "generate": "dfx generate badger_backend",
-    "format": "npx prettier --write src/badger_frontend/**/*.ts src/badger_frontend/**/*.tsx"
+    "format": "npx prettier --write src/badger_frontend"
   },
   "dependencies": {
     "@dfinity/agent": "^0.20.2",
@@ -46,6 +46,7 @@
     "postcss-loader": "^7.3.3",
     "postcss-preset-env": "^9.2.0",
     "prettier": "^3.1.1",
+    "prettier-plugin-organize-imports": "^3.2.4",
     "process": "0.11.10",
     "stream-browserify": "3.0.0",
     "style-loader": "^3.3.3",

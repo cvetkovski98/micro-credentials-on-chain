@@ -12,10 +12,7 @@ export const BadgeTableItem = memo((props: BadgeTableItemProps) => {
   const badgeType = badge.badgeType === 0 ? "Goal" : "Package";
 
   return (
-    <tr
-      className="hover:bg-gray-100 cursor-pointer"
-      onClick={() => props.onClick(badge)}
-    >
+    <tr className="hover:bg-gray-100 cursor-pointer" onClick={() => props.onClick(badge)}>
       <td className="border px-4 py-2">{badge.badgeID.toString()}</td>
       <td className="border px-4 py-2">{badge.title}</td>
       <td className="border px-4 py-2">{badge.description}</td>

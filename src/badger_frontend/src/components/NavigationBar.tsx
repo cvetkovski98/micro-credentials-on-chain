@@ -71,14 +71,8 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
           </div>
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-between">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <img
-                className="block h-8 w-auto"
-                src={"/logo.svg"}
-                alt="Workflow"
-              />
-              <span className="ml-4 text-white font-bold">
-                ZHAW Micro-Credentials On Chain
-              </span>
+              <img className="block h-8 w-auto" src={"/logo.svg"} alt="Workflow" />
+              <span className="ml-4 text-white font-bold">ZHAW Micro-Credentials On Chain</span>
             </Link>
             <div className="hidden ml-auto sm:ml-6 sm:flex">
               <div className="flex space-x-4">
@@ -103,10 +97,7 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
       </div>
 
       {/*  Mobile menu, show/hide based on menu state.  */}
-      <div
-        className={`sm:hidden ${isOpen ? "block" : "hidden"}`}
-        id="mobile-menu"
-      >
+      <div className={`sm:hidden ${isOpen ? "block" : "hidden"}`} id="mobile-menu">
         <div className="space-y-1 px-2 pb-3 pt-2">
           {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
           {routes.map((route) => (

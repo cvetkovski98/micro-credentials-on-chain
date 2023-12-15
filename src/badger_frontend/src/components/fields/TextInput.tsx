@@ -1,8 +1,7 @@
-import React from "react";
 import { useFormikContext } from "formik";
+import React from "react";
 
-interface TextInputFieldProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TextInputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   name: string;
 }
@@ -19,10 +18,7 @@ export const TextField: React.FC<TextInputFieldProps> = (props) => {
 
   return (
     <div className="flex flex-col">
-      <label
-        htmlFor={name}
-        className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-      >
+      <label htmlFor={name} className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">
         {label}
       </label>
       <input
@@ -33,9 +29,7 @@ export const TextField: React.FC<TextInputFieldProps> = (props) => {
         {...rest}
         {...formik.getFieldProps(name)}
       />
-      {hasError ? (
-        <div className="text-red-500 text-xs italic">{errorMessage}</div>
-      ) : null}
+      {hasError ? <div className="text-red-500 text-xs italic">{errorMessage}</div> : null}
     </div>
   );
 };

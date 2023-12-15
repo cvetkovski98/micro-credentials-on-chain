@@ -1,8 +1,7 @@
-import React from "react";
 import { useFormikContext } from "formik";
+import React from "react";
 
-interface TextAreaFieldProps
-  extends React.InputHTMLAttributes<HTMLTextAreaElement> {
+interface TextAreaFieldProps extends React.InputHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   name: string;
   rows: number;
@@ -20,10 +19,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = (props) => {
 
   return (
     <div className="flex flex-col">
-      <label
-        htmlFor={name}
-        className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-      >
+      <label htmlFor={name} className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">
         {label}
       </label>
       <textarea
@@ -34,9 +30,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = (props) => {
         {...rest}
         {...formik.getFieldProps(name)}
       />
-      {hasError ? (
-        <div className="text-red-500 text-xs italic">{errorMessage}</div>
-      ) : null}
+      {hasError ? <div className="text-red-500 text-xs italic">{errorMessage}</div> : null}
     </div>
   );
 };

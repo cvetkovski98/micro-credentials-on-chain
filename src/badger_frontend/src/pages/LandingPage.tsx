@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useClient } from "../context/Global";
 
@@ -26,8 +26,6 @@ export const LandingPage: React.FC = () => {
       process.env.DFX_NETWORK === "ic"
         ? "https://identity.ic0.app"
         : `http://localhost:4943/?canisterId=${CANISTER_ID_IDENTITY}`;
-
-    console.log(provider);
 
     client.login({
       identityProvider: provider,
@@ -81,9 +79,7 @@ export const LandingPage: React.FC = () => {
     <div className="grid px-4 bg-white place-content-center">
       <div className="text-center">
         <h1 className="font-black text-gray-200 text-9xl mt-24">Welcome</h1>
-        <p className="text-2xl font-bold tracking-tight text-gray-900 mb-4 sm:text-4xl">
-          ZHAW Micro-Credentials
-        </p>
+        <p className="text-2xl font-bold tracking-tight text-gray-900 mb-4 sm:text-4xl">ZHAW Micro-Credentials</p>
         {renderMessage()}
         {renderButton()}
       </div>

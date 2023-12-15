@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { NewBadgeRequest, Organisation, User, isOK } from "../../badges/models";
-import { BadgeForm, BadgeFormValues } from "../../components/forms/BadgeForm";
 import { useNavigate } from "react-router-dom";
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { organisationsAPI } from "../../badges/api/remote/organisations";
 import { usersAPI } from "../../badges/api/remote/users";
+import { NewBadgeRequest, Organisation, User, isOK } from "../../badges/models";
+import { BadgeForm, BadgeFormValues } from "../../components/forms/BadgeForm";
 import { useBackendActor } from "../../context/Global";
 
 export const BadgeCreatePage: React.FC = () => {
@@ -93,12 +93,7 @@ export const BadgeCreatePage: React.FC = () => {
             <span className="block sm:inline"> {success}</span>
           </div>
         )}
-        <BadgeForm
-          onSubmit={handleSubmit}
-          organisations={organisations}
-          users={users}
-          disabled={loading}
-        />
+        <BadgeForm onSubmit={handleSubmit} organisations={organisations} users={users} disabled={loading} />
       </div>
     </React.Fragment>
   );
