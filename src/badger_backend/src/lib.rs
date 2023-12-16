@@ -36,6 +36,8 @@ thread_local! {
 
 #[query]
 fn organisations_get_all() -> Response<Vec<Organisation>> {
+    authenticate_caller();
+
     ORGANISATIONS.with(|orgs| Response::Ok(orgs.borrow().values().cloned().collect()))
 }
 
