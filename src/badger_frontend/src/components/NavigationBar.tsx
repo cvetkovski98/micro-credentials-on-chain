@@ -41,9 +41,7 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
   useEffect(() => {
-    client.isAuthenticated().then((isAuthenticated) => {
-      setIsAuthenticated((_) => isAuthenticated);
-    });
+    client.isAuthenticated().then((auth) => setIsAuthenticated(auth));
   }, [client.getIdentity()]);
 
   const logout = () => {

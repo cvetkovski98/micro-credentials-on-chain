@@ -10,15 +10,11 @@ export const LandingPage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
   useEffect(() => {
-    setLoading((_) => true);
+    setLoading(() => true);
     client
       .isAuthenticated()
-      .then((isAuthenticated) => {
-        setIsAuthenticated((_) => isAuthenticated);
-      })
-      .finally(() => {
-        setLoading((_) => false);
-      });
+      .then((auth) => setIsAuthenticated(auth))
+      .finally(() => setLoading(false));
   }, [client, client.getIdentity()]);
 
   const login = () => {
@@ -30,12 +26,10 @@ export const LandingPage: React.FC = () => {
     client.login({
       identityProvider: provider,
       onSuccess: () => {
-        setLoading((_) => false);
+        setLoading(false);
         window.location.reload();
       },
-      onError: (error) => {
-        setLoading((_) => false);
-      },
+      onError: () => setLoading(false),
     });
   };
 

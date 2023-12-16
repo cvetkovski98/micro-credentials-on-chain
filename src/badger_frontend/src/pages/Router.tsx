@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate, createHashRouter } from "react-router-dom";
+import { ADMINISTRATION_ROLE_ID, LECTURER_ROLE_ID } from "../badges/models";
 import { ProtectedPage } from "../components/ProtectedPage";
 import { ErrorPage } from "./ErrorPage";
 import { LandingPage } from "./LandingPage";
@@ -39,7 +40,7 @@ export const PageRouter = createHashRouter([
       {
         path: "badges/create",
         element: (
-          <ProtectedPage>
+          <ProtectedPage roles={[LECTURER_ROLE_ID, ADMINISTRATION_ROLE_ID]}>
             <BadgeCreatePage />
           </ProtectedPage>
         ),
