@@ -134,22 +134,49 @@ fn users_create_one(user: NewUser) -> Response<User> {
 }
 
 #[query]
-fn badges_get_all(user_id: u128) -> Response<Vec<Badge>> {
-    let has_user = USERS.with(|users| match users.borrow().get(&user_id) {
-        Some(_) => true,
-        None => false,
+fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
+    let p = authenticate_caller();
+
+    let user = PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        principals.get(&p).cloned()
     });
 
-    if !has_user {
-        return Response::Err(format!("User with id {} not found.", user_id));
+    if user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
     }
 
-    let badges = USER_BADGES.with(|badges| match badges.borrow().get(&user_id) {
-        Some(user_badges) => user_badges.clone(),
-        None => vec![],
-    });
+    let user = user.unwrap();
 
-    return Response::Ok(badges);
+    // We decide the badge filter based on the user's roles.
+    // If the user has the admin role, we return all badges and we filter by organisation if provided.
+    // If the user has the issuer role, we return all badges from the organisation.
+    // If the user has the student role, we return all badges from the user.
+    let badge_filter =
+        |badge: &Badge| match user.roles.iter().find(|r| r.id == ADMINISTRATOR_ROLE_ID) {
+            Some(_) => match organisation_id {
+                Some(organisation_id) => badge.issuer_id == organisation_id,
+                None => true,
+            },
+            None => match user.roles.iter().find(|r| r.id == LECTURER_ROLE_ID) {
+                Some(_) => badge.issuer_id == user.organisation_id,
+                None => match user.roles.iter().find(|r| r.id == STUDENT_ROLE_ID) {
+                    Some(_) => badge.owner_id == user.id,
+                    None => false,
+                },
+            },
+        };
+
+    USER_BADGES.with(|badges| {
+        let badges: Vec<Badge> = badges
+            .borrow()
+            .values()
+            .flatten()
+            .cloned()
+            .filter(badge_filter)
+            .collect();
+        Response::Ok(badges)
+    })
 }
 
 #[query]
