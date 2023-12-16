@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Role } from "../badges/models";
 import { useClient, useUser } from "../context/Global";
+import { hasRoleIDs } from "../lib/util";
 import { FullScreenLoader } from "./FullScreenLoader";
 
 interface ProtectedPageRoles extends PropsWithChildren {
@@ -24,17 +24,12 @@ export const ProtectedPage: React.FC<ProtectedPageRoles> = ({ roles, children })
           navigate("/");
         } else if (!user) {
           navigate("/users/register");
-        } else if (roles && !hasRolePermission(roles, user.roles)) {
+        } else if (roles && !hasRoleIDs(user, roles)) {
           navigate("/forbidden");
         }
       })
       .finally(() => setLoading(false));
   }, [children]);
-
-  const hasRolePermission = (required: bigint[], actual: Role[]) => {
-    const roleIDs = actual.map((role) => role.roleID);
-    return required.some((rID) => roleIDs.includes(rID));
-  };
 
   if (loading) {
     return <FullScreenLoader>Loading...</FullScreenLoader>;
