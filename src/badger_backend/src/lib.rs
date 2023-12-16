@@ -7,31 +7,28 @@ use ic_cdk::api::time;
 use ic_cdk::{init, post_upgrade, query, update};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use util::{authenticate_caller, has_role_based_badge_access, next_badge_id, next_user_id};
+use std::str::FromStr;
+use util::{authenticate_caller, has_role_based_badge_access, next_badge_id};
 
 const STUDENT_ROLE_ID: u128 = 1;
 const LECTURER_ROLE_ID: u128 = 2;
 const ADMINISTRATOR_ROLE_ID: u128 = 3;
 
 thread_local! {
+    // Users
     pub static PRINCIPALS: RefCell<BTreeMap<Principal, User>> = RefCell::new(BTreeMap::new());
 
     // Organizations
     pub static NEXT_ORGANISATION_ID: RefCell<u128> = RefCell::new(0);
     pub static ORGANISATIONS: RefCell<BTreeMap<u128, Organisation>> = RefCell::new(BTreeMap::new());
 
-    // Users
-    pub static NEXT_USER_ID: RefCell<u128> = RefCell::new(0);
-    pub static USERS: RefCell<BTreeMap<u128, User>> = RefCell::new(BTreeMap::new());
-
     // Badges
     pub static NEXT_BADGE_ID: RefCell<u128> = RefCell::new(0);
-    pub static USER_BADGES: RefCell<BTreeMap<u128, Vec<Badge>>> = RefCell::new(BTreeMap::new());
+    pub static BADGES: RefCell<BTreeMap<u128, Badge>> = RefCell::new(BTreeMap::new());
 
     // Roles
     pub static NEXT_ROLE_ID: RefCell<u128> = RefCell::new(0);
     pub static ROLES: RefCell<BTreeMap<u128, Role>> = RefCell::new(BTreeMap::new());
-    pub static PRINCIPAL_ROLES: RefCell<BTreeMap<Principal, Role>> = RefCell::new(BTreeMap::new());
 }
 
 #[query]
@@ -47,25 +44,26 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
 
     // org_filter is a function that returns true if the user has the organisation.
     // If there is no organisation provided, it returns true for all users.
-    let org_filter = |user: &User| match organisation_id {
-        Some(organisation_id) => user.organisation_id == organisation_id,
-        None => true,
-    };
+    fn f(user: &User, org_id: Option<u128>, role_id: Option<u128>) -> bool {
+        let org_filter = |user: &User| match org_id {
+            Some(org_id) => user.organisation_id == org_id,
+            None => true,
+        };
 
-    // role_filter is a function that returns true if the user has the role.
-    // If there is no role provided, it returns true for all users.
-    let role_filter = |user: &User| match role_id {
-        Some(role_id) => user.roles.iter().any(|r| r.id == role_id),
-        None => true,
-    };
+        let role_filter = |user: &User| match role_id {
+            Some(role_id) => user.roles.iter().any(|r| r.id == role_id),
+            None => true,
+        };
 
-    USERS.with(|users| {
-        let users: Vec<User> = users
-            .borrow()
+        org_filter(user) && role_filter(user)
+    }
+
+    PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        let users: Vec<User> = principals
             .values()
             .cloned()
-            .filter(org_filter)
-            .filter(role_filter)
+            .filter(|u| f(u, organisation_id, role_id))
             .collect();
         Response::Ok(users)
     })
@@ -120,7 +118,6 @@ fn users_create_one(user: NewUser) -> Response<User> {
     }
 
     let inserted = User {
-        id: next_user_id(),
         principal_id: p.to_string(),
         name: user.name.clone(),
         email: user.email.clone(),
@@ -132,10 +129,6 @@ fn users_create_one(user: NewUser) -> Response<User> {
     PRINCIPALS.with(|principals| {
         let mut principals = principals.borrow_mut();
         principals.insert(p, inserted.clone());
-    });
-
-    USERS.with(|users| {
-        users.borrow_mut().insert(inserted.id, inserted.clone());
         Response::Ok(inserted)
     })
 }
@@ -155,21 +148,20 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
 
     let user = user.unwrap();
 
-    let badge_filter = |badge: &Badge| {
-        let has_access = has_role_based_badge_access(&user, badge);
+    fn f(user: &User, badge: &Badge, organisation_id: Option<u128>) -> bool {
+        let has_access = has_role_based_badge_access(user, badge);
         match organisation_id {
             Some(organisation_id) => has_access && badge.issuer.id == organisation_id,
             None => has_access,
         }
-    };
+    }
 
-    USER_BADGES.with(|badges| {
+    BADGES.with(|badges| {
         let badges: Vec<Badge> = badges
             .borrow()
             .values()
-            .flatten()
+            .filter(|b| f(&user, b, organisation_id))
             .cloned()
-            .filter(badge_filter)
             .collect();
         Response::Ok(badges)
     })
@@ -190,21 +182,17 @@ fn badges_get_one(badge_id: u128) -> Response<Badge> {
 
     let user = user.unwrap();
 
-    USER_BADGES.with(|badges| {
-        let badges: Vec<Badge> = badges
-            .borrow()
-            .values()
-            .flatten()
-            .cloned()
-            .filter(|b| has_role_based_badge_access(&user, b))
-            .collect();
-        match badges.iter().find(|b| b.id == badge_id) {
-            Some(badge) => Response::Ok(badge.clone()),
-            None => Response::Err(format!(
-                "You do not have access to badge with id {} or it does not exist.",
-                badge_id
-            )),
+    BADGES.with(|badges| match badges.borrow().get(&badge_id) {
+        Some(badge) => {
+            if !has_role_based_badge_access(&user, badge) {
+                return Response::Err(format!(
+                    "User with principal {} does not have access to badge with id {}.",
+                    p, badge_id
+                ));
+            }
+            Response::Ok(badge.clone())
         }
+        None => Response::Err(format!("Badge with id {} not found.", badge_id)),
     })
 }
 
@@ -233,31 +221,18 @@ fn badges_revoke_one(badge_id: u128) -> Response<bool> {
         return Response::Err(String::from("Students cannot revoke badges."));
     }
 
-    USER_BADGES.with(|badges| {
-        let mut accessable_badges: Vec<Badge> = badges
-            .borrow()
-            .values()
-            .flatten()
-            .cloned()
-            .filter(|b| has_role_based_badge_access(&user, b))
-            .collect();
-
-        match accessable_badges.iter_mut().find(|b| b.id == badge_id) {
-            Some(badge) => {
-                if badge.is_revoked {
-                    return Response::Err(format!(
-                        "Badge with id {} is already revoked.",
-                        badge_id
-                    ));
-                }
-                badge.is_revoked = true;
-                Response::Ok(true)
+    BADGES.with(|badges| match badges.borrow_mut().get_mut(&badge_id) {
+        Some(badge) => {
+            if !has_role_based_badge_access(&user, badge) {
+                return Response::Err(format!(
+                    "User with principal {} does not have access to badge with id {}.",
+                    p, badge_id
+                ));
             }
-            None => Response::Err(format!(
-                "You do not have access to badge with id {} or it does not exist.",
-                badge_id
-            )),
+            badge.is_revoked = true;
+            Response::Ok(true)
         }
+        None => Response::Err(format!("Badge with id {} not found.", badge_id)),
     })
 }
 
@@ -316,14 +291,16 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
         ));
     }
 
-    let owner = USERS.with(|users| {
-        let users = users.borrow();
-        users.get(&badge.owner_id).cloned()
-    });
+    let owner = Principal::from_str(&badge.owner_id);
 
-    if owner.is_none() {
-        return Response::Err(format!("User with id {} not found.", badge.owner_id));
+    if owner.is_err() {
+        return Response::Err(format!("Invalid principal id: {}", badge.owner_id));
     }
+
+    let owner = PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        principals.get(&owner.unwrap()).cloned()
+    });
 
     let new_badge = Badge {
         id: next_badge_id(),
@@ -334,18 +311,13 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
         owner: owner.unwrap(),
         is_revoked: false,
         claims: badge.claims,
-        signed_by: vec![badge.issuer_id],
+        signed_by: vec![p.to_string()],
         created_at: time(),
     };
 
-    USER_BADGES.with(|badges| {
-        let mut user_badges = badges.borrow_mut();
-        match user_badges.get_mut(&badge.owner_id) {
-            Some(user_badges) => user_badges.push(new_badge.clone()),
-            None => {
-                user_badges.insert(badge.owner_id, vec![new_badge.clone()]);
-            }
-        }
+    BADGES.with(|badges| {
+        let mut badges = badges.borrow_mut();
+        badges.insert(new_badge.id, new_badge.clone());
         Response::Ok(new_badge)
     })
 }

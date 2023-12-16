@@ -74,7 +74,7 @@ export const BadgeDetailsPage: React.FC = () => {
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Owner</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {badge.owner.userID.toString()} - {badge.owner.name}
+                  {badge.owner.principalID.toString()} - {badge.owner.name}
                 </dd>
               </div>
               <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -96,7 +96,7 @@ export const BadgeDetailsPage: React.FC = () => {
             <h4 className="text-sm leading-6 font-medium text-gray-900">
               <span className="mr-2">Signed by:</span>
             </h4>
-            <p className="text-xs break-words leading-5 font-mono">{badge.signedBy}</p>
+            <p className="text-xs break-words leading-5 font-mono">{badge.signedBy.join(", ")}</p>
           </div>
         </div>
       </div>

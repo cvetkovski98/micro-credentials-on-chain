@@ -3,8 +3,8 @@ use ic_cdk::api::{caller, time};
 
 use crate::{
     model::{Badge, Organisation, Role, User},
-    ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, NEXT_BADGE_ID, NEXT_ORGANISATION_ID, NEXT_USER_ID,
-    ORGANISATIONS, ROLES, STUDENT_ROLE_ID,
+    ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, NEXT_BADGE_ID, NEXT_ORGANISATION_ID, ORGANISATIONS,
+    ROLES, STUDENT_ROLE_ID,
 };
 
 pub fn authenticate_caller() -> Principal {
@@ -13,14 +13,6 @@ pub fn authenticate_caller() -> Principal {
         panic!("Anonymous caller not allowed.");
     }
     principal
-}
-
-pub fn next_user_id() -> u128 {
-    NEXT_USER_ID.with(|id| {
-        let mut id = id.borrow_mut();
-        *id += 1;
-        *id
-    })
 }
 
 pub fn next_organisation_id() -> u128 {
@@ -57,7 +49,7 @@ pub fn has_role_based_badge_access(user: &User, badge: &Badge) -> bool {
     }
 
     if is_student {
-        return user.id == badge.owner.id;
+        return user.principal_id == badge.owner.principal_id;
     }
 
     false

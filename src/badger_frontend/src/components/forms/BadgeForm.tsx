@@ -10,7 +10,7 @@ export interface BadgeFormValues {
   description?: string;
   badgeType: number;
   issuerID: bigint;
-  ownerID: bigint;
+  ownerID: string;
   claims: Claim[];
 }
 
@@ -28,7 +28,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
       title: "",
       badgeType: 0,
       issuerID: props.organisations[0]?.organisationID,
-      ownerID: props.users[0]?.userID,
+      ownerID: props.users[0]?.principalID,
       claims: [],
     },
     enableReinitialize: true,
@@ -49,11 +49,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
         .min(0, "Issuer ID must be greater than or equal to 1")
         .required("Issuer ID is required")
         .typeError("Issuer ID must be a number"),
-      ownerID: Yup.number()
-        .integer("Owner ID must be an integer")
-        .min(0, "Owner ID must be greater than or equal to 1")
-        .required("Owner ID is required")
-        .typeError("Owner ID must be a number"),
+      ownerID: Yup.string().required("Owner ID is required"),
       claims: Yup.array().of(
         Yup.object({
           key: Yup.string().required("Required"),
@@ -109,7 +105,7 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
               name="ownerID"
               label="User"
               options={props.users.map((s) => ({
-                value: s.userID,
+                value: s.principalID,
                 label: s.name,
               }))}
               disabled={props.disabled}

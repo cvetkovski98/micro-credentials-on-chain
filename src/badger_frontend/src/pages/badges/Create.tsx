@@ -61,8 +61,9 @@ export const BadgeCreatePage: React.FC = () => {
   const handleSubmit = (values: BadgeFormValues) => {
     const payload: NewBadgeRequest = {
       ...values,
+      badgeType: Number(values.badgeType),
       description: values.description ? [values.description] : [],
-      ownerID: BigInt(values.ownerID),
+      ownerID: values.ownerID,
       issuerID: BigInt(values.issuerID),
     };
 

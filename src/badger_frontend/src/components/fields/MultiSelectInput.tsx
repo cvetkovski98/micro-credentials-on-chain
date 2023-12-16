@@ -33,16 +33,6 @@ export const MultiSelectField: React.FC<MultiSelectInputFieldProps> = (props) =>
                   {...rest}
                   {...formik.getFieldProps(name)}
                   value={option.value.toString()}
-                  onChange={(e) => {
-                    const value = BigInt(e.target.value);
-                    let values = formik.values[name];
-                    if (values.includes(value)) {
-                      values = values.filter((v: bigint) => v !== value);
-                    } else {
-                      values.push(value);
-                    }
-                    formik.setFieldValue(name, values);
-                  }}
                 />
                 {option.label}
               </label>

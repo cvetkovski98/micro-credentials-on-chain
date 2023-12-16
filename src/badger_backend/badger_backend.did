@@ -12,7 +12,7 @@ type Badge = record {
     owner : User;
     isRevoked : bool;
     claims : vec Claim;
-    signedBy : vec nat;
+    signedBy : vec text;
     createdAt : nat64;
 };
 
@@ -21,7 +21,7 @@ type NewBadge = record {
     description : opt text;
     badgeType : nat16;
     issuerID : nat;
-    ownerID : nat;
+    ownerID : text;
     claims : vec Claim;
 };
 
@@ -32,9 +32,9 @@ type Organisation = record {
 };
 
 type User = record {
-    userID : nat;
     name : text;
     email : text;
+    principalID: text;
     organisationID : nat;
     roles : vec Role;
     createdAt : nat64;

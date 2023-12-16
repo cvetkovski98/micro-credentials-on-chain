@@ -39,7 +39,7 @@ pub struct Badge {
     pub claims: Vec<Claim>,
 
     #[serde(rename = "signedBy")]
-    pub signed_by: Vec<u128>,
+    pub signed_by: Vec<String>,
 
     #[serde(rename = "createdAt")]
     pub created_at: u64,
@@ -58,7 +58,7 @@ pub struct NewBadge {
     pub issuer_id: u128,
 
     #[serde(rename = "ownerID")]
-    pub owner_id: u128,
+    pub owner_id: String,
 
     pub claims: Vec<Claim>,
 }
@@ -76,15 +76,12 @@ pub struct Organisation {
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct User {
-    #[serde(rename = "userID")]
-    pub id: u128,
-
-    #[serde(rename = "principalID")]
-    pub principal_id: String,
-
     pub name: String,
 
     pub email: String,
+
+    #[serde(rename = "principalID")]
+    pub principal_id: String,
 
     #[serde(rename = "organisationID")]
     pub organisation_id: u128,
