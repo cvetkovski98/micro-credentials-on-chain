@@ -2,7 +2,7 @@ use candid::Principal;
 use ic_cdk::api::{caller, time};
 
 use crate::{
-    model::{Organisation, Role},
+    model::{Badge, Organisation, Role, User},
     ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, NEXT_BADGE_ID, NEXT_ORGANISATION_ID, NEXT_USER_ID,
     ORGANISATIONS, ROLES, STUDENT_ROLE_ID,
 };
@@ -37,6 +37,30 @@ pub fn next_badge_id() -> u128 {
         *id += 1;
         *id
     })
+}
+
+/// Checks if the user has access to the badge.
+/// If the user is an administrator, they have access to all badges.
+/// If the user is a lecturer, they have access to all badges issued by their organisation.
+/// If the user is a student, they have access to all badges they own.
+pub fn has_role_based_badge_access(user: &User, badge: &Badge) -> bool {
+    let is_admin = user.roles.iter().any(|r| r.id == ADMINISTRATOR_ROLE_ID);
+    let is_lecturer = user.roles.iter().any(|r| r.id == LECTURER_ROLE_ID);
+    let is_student = user.roles.iter().any(|r| r.id == STUDENT_ROLE_ID);
+
+    if is_admin {
+        return true;
+    }
+
+    if is_lecturer {
+        return user.organisation_id == badge.issuer_id;
+    }
+
+    if is_student {
+        return user.id == badge.owner_id;
+    }
+
+    false
 }
 
 pub fn generate_organisations() {

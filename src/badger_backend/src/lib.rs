@@ -7,7 +7,7 @@ use ic_cdk::api::time;
 use ic_cdk::{init, post_upgrade, query, update};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use util::{authenticate_caller, next_badge_id, next_user_id};
+use util::{authenticate_caller, has_role_based_badge_access, next_badge_id, next_user_id};
 
 const STUDENT_ROLE_ID: u128 = 1;
 const LECTURER_ROLE_ID: u128 = 2;
@@ -155,24 +155,13 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
 
     let user = user.unwrap();
 
-    // We decide the badge filter based on the user's roles.
-    // If the user has the admin role, we return all badges and we filter by organisation if provided.
-    // If the user has the issuer role, we return all badges from the organisation.
-    // If the user has the student role, we return all badges from the user.
-    let badge_filter =
-        |badge: &Badge| match user.roles.iter().find(|r| r.id == ADMINISTRATOR_ROLE_ID) {
-            Some(_) => match organisation_id {
-                Some(organisation_id) => badge.issuer_id == organisation_id,
-                None => true,
-            },
-            None => match user.roles.iter().find(|r| r.id == LECTURER_ROLE_ID) {
-                Some(_) => badge.issuer_id == user.organisation_id,
-                None => match user.roles.iter().find(|r| r.id == STUDENT_ROLE_ID) {
-                    Some(_) => badge.owner_id == user.id,
-                    None => false,
-                },
-            },
-        };
+    let badge_filter = |badge: &Badge| {
+        let has_access = has_role_based_badge_access(&user, badge);
+        match organisation_id {
+            Some(organisation_id) => has_access && badge.issuer_id == organisation_id,
+            None => has_access,
+        }
+    };
 
     USER_BADGES.with(|badges| {
         let badges: Vec<Badge> = badges
