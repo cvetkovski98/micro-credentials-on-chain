@@ -176,13 +176,35 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
 }
 
 #[query]
-fn badges_get_one(user_id: u128, id: u128) -> Response<Badge> {
-    USER_BADGES.with(|badges| match badges.borrow().get(&user_id) {
-        Some(user_badges) => match user_badges.iter().find(|b| b.id == id) {
+fn badges_get_one(badge_id: u128) -> Response<Badge> {
+    let p = authenticate_caller();
+
+    let user = PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        principals.get(&p).cloned()
+    });
+
+    if user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
+    }
+
+    let user = user.unwrap();
+
+    USER_BADGES.with(|badges| {
+        let badges: Vec<Badge> = badges
+            .borrow()
+            .values()
+            .flatten()
+            .cloned()
+            .filter(|b| has_role_based_badge_access(&user, b))
+            .collect();
+        match badges.iter().find(|b| b.id == badge_id) {
             Some(badge) => Response::Ok(badge.clone()),
-            None => Response::Err(format!("Badge with id {} not found.", id)),
-        },
-        None => Response::Err(format!("User with id {} not found.", user_id)),
+            None => Response::Err(format!(
+                "You do not have access to badge with id {} or it does not exist.",
+                badge_id
+            )),
+        }
     })
 }
 
