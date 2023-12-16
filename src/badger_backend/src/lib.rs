@@ -60,10 +60,10 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
     };
 
     USERS.with(|users| {
-        let users = users.borrow();
-        let users: Vec<User> = users.values().cloned().collect();
         let users: Vec<User> = users
-            .into_iter()
+            .borrow()
+            .values()
+            .cloned()
             .filter(org_filter)
             .filter(role_filter)
             .collect();
