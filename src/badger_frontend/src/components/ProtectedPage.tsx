@@ -1,6 +1,7 @@
 import React, { PropsWithChildren, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClient, useUser } from "../context/Global";
+import { FullScreenLoader } from "./FullScreenLoader";
 
 export const ProtectedPage: React.FC<PropsWithChildren> = ({ children }) => {
   const navigate = useNavigate();
@@ -16,13 +17,12 @@ export const ProtectedPage: React.FC<PropsWithChildren> = ({ children }) => {
       } else if (!user) {
         navigate("/users/register");
       }
-
       setLoading((_) => false);
     });
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <FullScreenLoader>Loading...</FullScreenLoader>;
   }
 
   return children;
