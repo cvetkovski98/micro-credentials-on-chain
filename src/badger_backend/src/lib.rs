@@ -86,12 +86,19 @@ fn users_whoami() -> Response<User> {
 fn users_create_one(user: NewUser) -> Response<User> {
     let p = authenticate_caller();
 
-    let has_org = ORGANISATIONS.with(|orgs| match orgs.borrow().get(&user.organisation_id) {
-        Some(_) => true,
-        None => false,
+    if let Some(_) = PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        principals.get(&p).cloned()
+    }) {
+        return Response::Err(format!("User with principal {} already exists.", p));
+    }
+
+    let organisation: Option<Organisation> = ORGANISATIONS.with(|orgs| {
+        let orgs = orgs.borrow();
+        orgs.get(&user.organisation_id).cloned()
     });
 
-    if !has_org {
+    if organisation.is_none() {
         return Response::Err(format!(
             "Organisation with id {} not found.",
             user.organisation_id
@@ -102,7 +109,6 @@ fn users_create_one(user: NewUser) -> Response<User> {
 
     for role_id in &user.roles {
         let role: Option<Role> = ROLES.with(|roles| roles.borrow().get(role_id).cloned());
-        println!("Role: {:?}", role);
         match role {
             Some(role) => roles.push(role),
             None => {
@@ -111,9 +117,8 @@ fn users_create_one(user: NewUser) -> Response<User> {
         }
     }
 
-    let id = next_user_id();
     let inserted = User {
-        id: id.clone(),
+        id: next_user_id(),
         principal_id: p.to_string(),
         name: user.name.clone(),
         email: user.email.clone(),
@@ -128,7 +133,7 @@ fn users_create_one(user: NewUser) -> Response<User> {
     });
 
     USERS.with(|users| {
-        users.borrow_mut().insert(id, inserted.clone());
+        users.borrow_mut().insert(inserted.id, inserted.clone());
         Response::Ok(inserted)
     })
 }
