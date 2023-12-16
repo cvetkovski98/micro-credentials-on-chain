@@ -158,7 +158,7 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
     let badge_filter = |badge: &Badge| {
         let has_access = has_role_based_badge_access(&user, badge);
         match organisation_id {
-            Some(organisation_id) => has_access && badge.issuer_id == organisation_id,
+            Some(organisation_id) => has_access && badge.issuer.id == organisation_id,
             None => has_access,
         }
     };
@@ -304,13 +304,34 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
         }
     }
 
+    let organisation = ORGANISATIONS.with(|orgs| {
+        let orgs = orgs.borrow();
+        orgs.get(&badge.issuer_id).cloned()
+    });
+
+    if organisation.is_none() {
+        return Response::Err(format!(
+            "Organisation with id {} not found.",
+            badge.issuer_id
+        ));
+    }
+
+    let owner = USERS.with(|users| {
+        let users = users.borrow();
+        users.get(&badge.owner_id).cloned()
+    });
+
+    if owner.is_none() {
+        return Response::Err(format!("User with id {} not found.", badge.owner_id));
+    }
+
     let new_badge = Badge {
         id: next_badge_id(),
         title: badge.title,
         description: badge.description,
         badge_type: badge.badge_type,
-        issuer_id: badge.issuer_id,
-        owner_id: badge.owner_id,
+        issuer: organisation.unwrap(),
+        owner: owner.unwrap(),
         is_revoked: false,
         claims: badge.claims,
         signed_by: vec![badge.issuer_id],

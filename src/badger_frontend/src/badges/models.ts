@@ -22,8 +22,8 @@ export interface Badge {
   title: string;
   description: OptionalText;
   badgeType: number;
-  issuerID: bigint;
-  ownerID: bigint;
+  issuer: Organisation;
+  owner: User;
   claims: Claim[];
   signedBy: number[];
   createdAt: string;
@@ -36,7 +36,6 @@ export interface NewBadgeRequest {
   issuerID: bigint;
   ownerID: bigint;
   claims: Claim[];
-  signedBy: bigint[];
 }
 
 export interface Organisation {

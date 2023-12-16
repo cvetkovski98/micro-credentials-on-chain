@@ -64,8 +64,9 @@ export const BadgeCreatePage: React.FC = () => {
       description: values.description ? [values.description] : [],
       ownerID: BigInt(values.ownerID),
       issuerID: BigInt(values.issuerID),
-      signedBy: [],
     };
+
+    console.debug("Submitting payload", payload);
 
     setSubmitting(true);
 

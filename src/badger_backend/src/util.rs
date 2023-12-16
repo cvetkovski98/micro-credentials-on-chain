@@ -53,11 +53,11 @@ pub fn has_role_based_badge_access(user: &User, badge: &Badge) -> bool {
     }
 
     if is_lecturer {
-        return user.organisation_id == badge.issuer_id;
+        return user.organisation_id == badge.issuer.id;
     }
 
     if is_student {
-        return user.id == badge.owner_id;
+        return user.id == badge.owner.id;
     }
 
     false

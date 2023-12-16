@@ -27,11 +27,11 @@ pub struct Badge {
     #[serde(rename = "badgeType")]
     pub badge_type: u16,
 
-    #[serde(rename = "issuerID")]
-    pub issuer_id: u128,
+    #[serde(rename = "issuer")]
+    pub issuer: Organisation,
 
-    #[serde(rename = "ownerID")]
-    pub owner_id: u128,
+    #[serde(rename = "owner")]
+    pub owner: User,
 
     #[serde(rename = "isRevoked")]
     pub is_revoked: bool,

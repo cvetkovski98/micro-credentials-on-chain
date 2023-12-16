@@ -4,11 +4,10 @@ import { badgesAPI } from "../../badges/api/remote/badges";
 import { ADMINISTRATION_ROLE_ID, Badge, LECTURER_ROLE_ID, isOK } from "../../badges/models";
 import { ProtectedComponent } from "../../components/ProtectedRender";
 import { BadgeTable } from "../../components/badges/BadgeTable";
-import { useBackendActor, useUser } from "../../context/Global";
+import { useBackendActor } from "../../context/Global";
 
 export const BadgeListPage: React.FC = () => {
   const actor = useBackendActor();
-  const user = useUser();
 
   const RemoteBadgesAPI = badgesAPI(actor);
 
@@ -18,7 +17,7 @@ export const BadgeListPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    RemoteBadgesAPI.getAll(user.userID)
+    RemoteBadgesAPI.getAll([])
       .then((value) => {
         if (isOK(value)) setBadges(value.ok);
         else setError(value.error);

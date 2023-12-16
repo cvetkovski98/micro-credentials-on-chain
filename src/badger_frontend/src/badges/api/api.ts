@@ -1,10 +1,10 @@
 import { Badge, NewBadgeRequest, NewUserRequest, OptionalBigInt, Organisation, Result, Role, User } from "../models";
 
 export interface BadgesAPI {
-  getAll(userID: bigint): Promise<Result<Badge[]>>;
-  getOne(userID: bigint, id: bigint): Promise<Result<Badge>>;
+  getAll(organisationID: OptionalBigInt): Promise<Result<Badge[]>>;
+  getOne(badgeID: bigint): Promise<Result<Badge>>;
   createOne(badge: NewBadgeRequest): Promise<Result<Badge>>;
-  deleteOne(userID: bigint, id: bigint): Promise<Result<boolean>>;
+  revokeOne(badgeID: bigint): Promise<Result<boolean>>;
 }
 
 export interface OrganisationsAPI {

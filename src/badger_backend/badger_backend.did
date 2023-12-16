@@ -8,8 +8,8 @@ type Badge = record {
     title : text;
     description : opt text;
     badgeType : nat16;
-    issuerID : nat;
-    ownerID : nat;
+    issuer : Organisation;
+    owner : User;
     isRevoked : bool;
     claims : vec Claim;
     signedBy : vec nat;

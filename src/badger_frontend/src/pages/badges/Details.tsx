@@ -1,30 +1,23 @@
 import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { badgesAPI } from "../../badges/api/remote/badges";
-import { organisationsAPI } from "../../badges/api/remote/organisations";
-import { usersAPI } from "../../badges/api/remote/users";
-import { Badge, Organisation, User, isOK } from "../../badges/models";
-import { useBackendActor, useUser } from "../../context/Global";
+import { Badge, isOK } from "../../badges/models";
+import { useBackendActor } from "../../context/Global";
 
 export const BadgeDetailsPage: React.FC = () => {
-  const badgeID = useParams<{ id: string }>().id || "";
+  const id = useParams<{ id: string }>().id || "";
   const actor = useBackendActor();
-  const user = useUser();
 
   const RemoteBadgesAPI = badgesAPI(actor);
-  const RemoteOrganisationsAPI = organisationsAPI(actor);
-  const RemoteUsersAPI = usersAPI(actor);
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [badge, setBadge] = React.useState<Badge>();
-  const [organisation, setOrganisation] = React.useState<Organisation>();
-  const [owner, setOwner] = React.useState<User>();
 
   useEffect(() => {
-    const id: bigint = BigInt(badgeID);
+    const badgeID: bigint = BigInt(id);
     setLoading(true);
-    RemoteBadgesAPI.getOne(user.userID, id)
+    RemoteBadgesAPI.getOne(badgeID)
       .then((value) => {
         if (isOK(value)) setBadge(value.ok);
         else setError(value.error);
@@ -35,33 +28,7 @@ export const BadgeDetailsPage: React.FC = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, [badgeID]);
-
-  useEffect(() => {
-    if (!badge) return;
-
-    RemoteOrganisationsAPI.getOne(badge.issuerID)
-      .then((value) => {
-        if (isOK(value)) setOrganisation(value.ok);
-        else setError(value.error);
-      })
-      .catch((error) => {
-        setError(error.message);
-      });
-  }, [badge]);
-
-  useEffect(() => {
-    if (!badge) return;
-
-    RemoteUsersAPI.getOne(badge.ownerID)
-      .then((value) => {
-        if (isOK(value)) setOwner(value.ok);
-        else setError(value.error);
-      })
-      .catch((error) => {
-        setError(error.message);
-      });
-  }, [badge]);
+  }, [id]);
 
   if (loading || !badge) {
     return <div>Loading...</div>;
@@ -101,13 +68,13 @@ export const BadgeDetailsPage: React.FC = () => {
               <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Issuer ID</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {badge.issuerID.toString()} - {organisation?.name}
+                  {badge.issuer.organisationID.toString()} - {badge.issuer.name}
                 </dd>
               </div>
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Owner</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {badge.ownerID.toString()} - {owner?.name}
+                  {badge.owner.userID.toString()} - {badge.owner.name}
                 </dd>
               </div>
               <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
