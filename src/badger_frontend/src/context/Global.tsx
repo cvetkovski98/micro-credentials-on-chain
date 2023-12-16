@@ -3,8 +3,8 @@ import { AuthClient } from "@dfinity/auth-client";
 import React, { PropsWithChildren, useEffect } from "react";
 import { usersAPI } from "../badges/api/remote/users";
 import { User, isOK } from "../badges/models";
-import { BackendActor, IdentityActor, createBackendActor, createIdentityActor } from "../lib/backend";
 import { FullScreenLoader } from "../components/FullScreenLoader";
+import { BackendActor, IdentityActor, createBackendActor, createIdentityActor } from "../lib/backend";
 
 const CANISTER_ID_IDENTITY = process.env.CANISTER_ID_INTERNET_IDENTITY;
 const CANISTER_ID_BADGER_BACKEND = process.env.CANISTER_ID_BADGER_BACKEND;
@@ -82,7 +82,7 @@ export const GlobalContextProvider: React.FC<PropsWithChildren<GlobalContextType
       text = "Loading user...";
     }
 
-    return <FullScreenLoader>Loading...</FullScreenLoader>
+    return <FullScreenLoader>Loading...</FullScreenLoader>;
   }
 
   return (
