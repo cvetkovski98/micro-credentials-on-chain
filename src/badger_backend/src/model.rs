@@ -33,6 +33,9 @@ pub struct Badge {
     #[serde(rename = "ownerID")]
     pub owner_id: u128,
 
+    #[serde(rename = "isRevoked")]
+    pub is_revoked: bool,
+
     pub claims: Vec<Claim>,
 
     #[serde(rename = "signedBy")]

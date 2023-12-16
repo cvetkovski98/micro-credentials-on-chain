@@ -10,6 +10,7 @@ type Badge = record {
     badgeType : nat16;
     issuerID : nat;
     ownerID : nat;
+    isRevoked : bool;
     claims : vec Claim;
     signedBy : vec nat;
     createdAt : nat64;
@@ -115,9 +116,9 @@ service badger : {
     users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
 
     // badges
-    badges_get_all : (user_id : nat) -> (BadgeGetAllResponse);
-    badges_get_one : (user_id : nat, id : nat) -> (BadgeGetOneResponse);
-    badges_delete_one : (user_id : nat, id : nat) -> (BadgeDeleteOneResponse);
+    badges_get_all : (organisation_id : opt nat) -> (BadgeGetAllResponse);
+    badges_get_one : (badge_id : nat) -> (BadgeGetOneResponse);
+    badges_revoke_one : (badge_id : nat) -> (BadgeDeleteOneResponse);
     badges_create_one : (badge : NewBadge) -> (BadgeCreateOneResponse);
 
     // roles

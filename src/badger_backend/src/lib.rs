@@ -209,19 +209,55 @@ fn badges_get_one(badge_id: u128) -> Response<Badge> {
 }
 
 #[update]
-fn badges_delete_one(user_id: u128, id: u128) -> Response<bool> {
-    USER_BADGES.with(|badges| match badges.borrow_mut().get_mut(&user_id) {
-        Some(user_badges) => {
-            let index = user_badges.iter().position(|b| b.id == id);
-            match index {
-                Some(index) => {
-                    user_badges.remove(index);
-                    Response::Ok(true)
+fn badges_revoke_one(badge_id: u128) -> Response<bool> {
+    let p = authenticate_caller();
+
+    let user = PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        principals.get(&p).cloned()
+    });
+
+    if user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
+    }
+
+    let user = user.unwrap();
+
+    let is_student = user
+        .roles
+        .iter()
+        .find(|r| r.id == STUDENT_ROLE_ID)
+        .is_some();
+
+    if is_student {
+        return Response::Err(String::from("Students cannot revoke badges."));
+    }
+
+    USER_BADGES.with(|badges| {
+        let mut accessable_badges: Vec<Badge> = badges
+            .borrow()
+            .values()
+            .flatten()
+            .cloned()
+            .filter(|b| has_role_based_badge_access(&user, b))
+            .collect();
+
+        match accessable_badges.iter_mut().find(|b| b.id == badge_id) {
+            Some(badge) => {
+                if badge.is_revoked {
+                    return Response::Err(format!(
+                        "Badge with id {} is already revoked.",
+                        badge_id
+                    ));
                 }
-                None => Response::Err(format!("Badge with id {} not found.", id)),
+                badge.is_revoked = true;
+                Response::Ok(true)
             }
+            None => Response::Err(format!(
+                "You do not have access to badge with id {} or it does not exist.",
+                badge_id
+            )),
         }
-        None => Response::Err(format!("User with id {} not found.", user_id)),
     })
 }
 
@@ -275,6 +311,7 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
         badge_type: badge.badge_type,
         issuer_id: badge.issuer_id,
         owner_id: badge.owner_id,
+        is_revoked: false,
         claims: badge.claims,
         signed_by: vec![badge.issuer_id],
         created_at: time(),
