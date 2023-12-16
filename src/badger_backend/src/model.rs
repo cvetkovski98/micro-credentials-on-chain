@@ -72,11 +72,6 @@ pub struct Organisation {
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
-pub struct NewOrganisation {
-    pub name: String,
-}
-
-#[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct User {
     #[serde(rename = "userID")]
     pub id: u128,

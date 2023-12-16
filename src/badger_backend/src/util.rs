@@ -3,7 +3,8 @@ use ic_cdk::api::{caller, time};
 
 use crate::{
     model::{Organisation, Role},
-    NEXT_BADGE_ID, NEXT_ORGANISATION_ID, NEXT_ROLE_ID, NEXT_USER_ID, ORGANISATIONS, ROLES,
+    ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, NEXT_BADGE_ID, NEXT_ORGANISATION_ID, NEXT_USER_ID,
+    ORGANISATIONS, ROLES, STUDENT_ROLE_ID,
 };
 
 pub fn authenticate_caller() -> Principal {
@@ -38,14 +39,6 @@ pub fn next_badge_id() -> u128 {
     })
 }
 
-pub fn next_role_id() -> u128 {
-    NEXT_ROLE_ID.with(|id| {
-        let mut id = id.borrow_mut();
-        *id += 1;
-        *id
-    })
-}
-
 pub fn generate_organisations() {
     let initial: Vec<String> = vec![
         String::from("Zurich University of Applied Sciences"),
@@ -70,19 +63,16 @@ pub fn generate_organisations() {
 }
 
 pub fn generate_roles() {
-    let initial: Vec<String> = vec![
-        String::from("Student"),
-        String::from("Lecturer"),
-        String::from("Administator"),
+    let initial: Vec<(u128, String)> = vec![
+        (STUDENT_ROLE_ID, String::from("Student")),
+        (LECTURER_ROLE_ID, String::from("Lecturer")),
+        (ADMINISTRATOR_ROLE_ID, String::from("Administator")),
     ];
 
     ROLES.with(|roles| {
         let mut roles = roles.borrow_mut();
-        for name in initial {
-            let role = Role {
-                id: next_role_id(),
-                name,
-            };
+        for (id, name) in initial {
+            let role = Role { id, name };
             roles.insert(role.id, role);
         }
     });

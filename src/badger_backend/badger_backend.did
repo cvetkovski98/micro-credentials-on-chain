@@ -30,10 +30,6 @@ type Organisation = record {
     createdAt : nat64;
 };
 
-type NewOrganisation = record {
-    name : text;
-};
-
 type User = record {
     userID : nat;
     name : text;
@@ -64,21 +60,6 @@ type OrganisationGetAllResponse = variant {
     error : text;
 };
 
-type OrganisationGetOneResponse = variant {
-    ok : Organisation;
-    error : text;
-};
-
-type OrganisationDeleteOneResponse = variant {
-    ok : bool;
-    error : text;
-};
-
-type OrganisationCreateOneResponse = variant {
-    ok : Organisation;
-    error : text;
-};
-
 type UserGetAllResponse = variant {
     ok : vec User;
     error : text;
@@ -86,11 +67,6 @@ type UserGetAllResponse = variant {
 
 type UserGetOneResponse = variant {
     ok : User;
-    error : text;
-};
-
-type UserDeleteOneResponse = variant {
-    ok : bool;
     error : text;
 };
 
@@ -124,11 +100,6 @@ type BadgeCreateOneResponse = variant {
     error : text;
 };
 
-type BadgeGetQRCodeResponse = variant {
-    ok : FileLocation;
-    error : text;
-};
-
 type RoleGetAllResponse = variant {
     ok : vec Role;
     error : text;
@@ -137,15 +108,10 @@ type RoleGetAllResponse = variant {
 service badger : {
     // organisations
     organisations_get_all : () -> (OrganisationGetAllResponse);
-    organisations_get_one : (id : nat) -> (OrganisationGetOneResponse);
-    organisations_delete_one : (id : nat) -> (OrganisationDeleteOneResponse);
-    organisations_create_one : (organisation : NewOrganisation) -> (OrganisationCreateOneResponse);
 
     // users
     users_whoami : () -> (UserGetOneResponse);
     users_get_all : (organisation_id : opt nat, role_id : opt nat) -> (UserGetAllResponse);
-    users_get_one : (id : nat) -> (UserGetOneResponse);
-    users_delete_one : (id : nat) -> (UserDeleteOneResponse);
     users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
 
     // badges
@@ -153,11 +119,7 @@ service badger : {
     badges_get_one : (user_id : nat, id : nat) -> (BadgeGetOneResponse);
     badges_delete_one : (user_id : nat, id : nat) -> (BadgeDeleteOneResponse);
     badges_create_one : (badge : NewBadge) -> (BadgeCreateOneResponse);
-    badges_get_qr_code : (user_id : nat, id : nat) -> (BadgeGetQRCodeResponse);
 
     // roles
     roles_get_all : () -> (RoleGetAllResponse);
-
-    // whoami
-    whoami : () -> (text);
 };

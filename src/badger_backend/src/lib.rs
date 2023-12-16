@@ -1,15 +1,17 @@
 mod model;
 mod util;
 
-use crate::model::{
-    Badge, FileLocation, NewBadge, NewOrganisation, NewUser, Organisation, Response, Role, User,
-};
+use crate::model::{Badge, NewBadge, NewUser, Organisation, Response, Role, User};
 use candid::Principal;
 use ic_cdk::api::time;
 use ic_cdk::{init, post_upgrade, query, update};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use util::{authenticate_caller, next_badge_id, next_organisation_id, next_user_id};
+use util::{authenticate_caller, next_badge_id, next_user_id};
+
+const STUDENT_ROLE_ID: u128 = 1;
+const LECTURER_ROLE_ID: u128 = 2;
+const ADMINISTRATOR_ROLE_ID: u128 = 3;
 
 thread_local! {
     pub static PRINCIPALS: RefCell<BTreeMap<Principal, User>> = RefCell::new(BTreeMap::new());
@@ -33,45 +35,8 @@ thread_local! {
 }
 
 #[query]
-fn whoami() -> String {
-    format!("{}", authenticate_caller())
-}
-
-#[query]
 fn organisations_get_all() -> Response<Vec<Organisation>> {
     ORGANISATIONS.with(|orgs| Response::Ok(orgs.borrow().values().cloned().collect()))
-}
-
-#[query]
-fn organisations_get_one(id: u128) -> Response<Organisation> {
-    ORGANISATIONS.with(|orgs| match orgs.borrow().get(&id) {
-        Some(org) => Response::Ok(org.clone()),
-        None => Response::Err(format!("Organisation with id {} not found.", id)),
-    })
-}
-
-#[update]
-fn organisations_delete_one(id: u128) -> Response<bool> {
-    ORGANISATIONS.with(|orgs| match orgs.borrow_mut().remove(&id) {
-        Some(_) => Response::Ok(true),
-        None => Response::Err(format!("Organisation with id {} not found.", id)),
-    })
-}
-
-#[update]
-fn organisations_create_one(org: NewOrganisation) -> Response<Organisation> {
-    let id = next_organisation_id();
-
-    ORGANISATIONS.with(|orgs| {
-        let new_org = Organisation {
-            id: id.clone(),
-            name: org.name,
-            created_at: time(),
-        };
-
-        orgs.borrow_mut().insert(id, new_org.clone());
-        Response::Ok(new_org)
-    })
 }
 
 #[query]
@@ -105,14 +70,6 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
 }
 
 #[query]
-fn users_get_one(id: u128) -> Response<User> {
-    USERS.with(|users| match users.borrow().get(&id) {
-        Some(user) => Response::Ok(user.clone()),
-        None => Response::Err(format!("User with id {} not found.", id)),
-    })
-}
-
-#[query]
 fn users_whoami() -> Response<User> {
     let p = authenticate_caller();
 
@@ -122,14 +79,6 @@ fn users_whoami() -> Response<User> {
             Some(user) => Response::Ok(user.clone()),
             None => Response::Err(format!("User with principal {} not found.", p)),
         }
-    })
-}
-
-#[update]
-fn users_delete_one(id: u128) -> Response<bool> {
-    USERS.with(|users| match users.borrow_mut().remove(&id) {
-        Some(_) => Response::Ok(true),
-        None => Response::Err(format!("User with id {} not found.", id)),
     })
 }
 
@@ -276,13 +225,6 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
             }
         }
         Response::Ok(new_badge)
-    })
-}
-
-#[update]
-fn badges_get_qr_code(user_id: u128, id: u128) -> Response<FileLocation> {
-    Response::Ok(FileLocation {
-        location: String::from(format!("{}-{}.png", user_id, id)),
     })
 }
 

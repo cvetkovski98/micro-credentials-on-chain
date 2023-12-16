@@ -45,10 +45,6 @@ export interface Organisation {
   createdAt: string;
 }
 
-export interface NewOrganisationRequest {
-  name: string;
-}
-
 export interface User {
   userID: bigint;
   name: string;
