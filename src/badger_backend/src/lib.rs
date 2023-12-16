@@ -216,37 +216,56 @@ fn badges_delete_one(user_id: u128, id: u128) -> Response<bool> {
 
 #[update]
 fn badges_create_one(badge: NewBadge) -> Response<Badge> {
-    let has_user = USERS.with(|users| match users.borrow().get(&badge.owner_id) {
-        Some(_) => true,
-        None => false,
+    let p = authenticate_caller();
+
+    let user = PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        principals.get(&p).cloned()
     });
 
-    if !has_user {
-        return Response::Err(format!("User with id {} not found.", badge.owner_id));
+    if user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
     }
 
-    let has_org = ORGANISATIONS.with(|orgs| match orgs.borrow().get(&badge.issuer_id) {
-        Some(_) => true,
-        None => false,
-    });
+    let user = user.unwrap();
 
-    if !has_org {
+    let is_admin = user
+        .roles
+        .iter()
+        .find(|r| r.id == ADMINISTRATOR_ROLE_ID)
+        .is_some();
+
+    let is_lecturer = user
+        .roles
+        .iter()
+        .find(|r| r.id == LECTURER_ROLE_ID)
+        .is_some();
+
+    if !is_admin && !is_lecturer {
         return Response::Err(format!(
-            "Organisation with id {} not found.",
-            badge.issuer_id
+            "User with principal {} is not an administrator or lecturer and cannot create badges.",
+            p
         ));
     }
 
-    let id = next_badge_id();
+    if is_lecturer {
+        if badge.issuer_id != user.organisation_id {
+            return Response::Err(format!(
+                "User with principal {} is not a member of organisation {} and cannot create badges for it.",
+                p, badge.issuer_id
+            ));
+        }
+    }
+
     let new_badge = Badge {
-        id: id.clone(),
+        id: next_badge_id(),
         title: badge.title,
         description: badge.description,
         badge_type: badge.badge_type,
         issuer_id: badge.issuer_id,
         owner_id: badge.owner_id,
         claims: badge.claims,
-        signed_by: vec![],
+        signed_by: vec![badge.issuer_id],
         created_at: time(),
     };
 
