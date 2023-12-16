@@ -6,10 +6,10 @@ use crate::model::{
 };
 use candid::Principal;
 use ic_cdk::api::time;
-use ic_cdk::{init, query, update};
+use ic_cdk::{init, post_upgrade, query, update};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use util::{authenticate_caller, next_badge_id, next_organisation_id, next_role_id, next_user_id};
+use util::{authenticate_caller, next_badge_id, next_organisation_id, next_user_id};
 
 thread_local! {
     pub static PRINCIPALS: RefCell<BTreeMap<Principal, User>> = RefCell::new(BTreeMap::new());
@@ -266,52 +266,14 @@ fn roles_get_all() -> Response<Vec<Role>> {
     ROLES.with(|roles| Response::Ok(roles.borrow().values().cloned().collect()))
 }
 
+#[post_upgrade]
+fn post_upgrade() {
+    util::generate_organisations();
+    util::generate_roles();
+}
+
 #[init]
 fn init() {
-    let zhaw_id = next_organisation_id();
-    let eth_id = next_organisation_id();
-    let uzh_id = next_organisation_id();
-
-    let zhaw = Organisation {
-        id: zhaw_id.clone(),
-        name: String::from("ZHAW"),
-        created_at: time(),
-    };
-    let eth = Organisation {
-        id: eth_id.clone(),
-        name: String::from("ETH"),
-        created_at: time(),
-    };
-    let uzh = Organisation {
-        id: uzh_id.clone(),
-        name: String::from("UZH"),
-        created_at: time(),
-    };
-
-    ORGANISATIONS.with(|orgs| {
-        let mut orgs = orgs.borrow_mut();
-        orgs.insert(zhaw_id, zhaw);
-        orgs.insert(eth_id, eth);
-        orgs.insert(uzh_id, uzh);
-    });
-
-    let student_role = Role {
-        id: next_role_id(),
-        name: String::from("Student"),
-    };
-    let lecturer_role = Role {
-        id: next_role_id(),
-        name: String::from("Lecturer"),
-    };
-    let admin_role = Role {
-        id: next_role_id(),
-        name: String::from("Administration"),
-    };
-
-    ROLES.with(|roles| {
-        let mut roles = roles.borrow_mut();
-        roles.insert(student_role.id, student_role);
-        roles.insert(lecturer_role.id, lecturer_role);
-        roles.insert(admin_role.id, admin_role);
-    });
+    util::generate_organisations();
+    util::generate_roles();
 }
