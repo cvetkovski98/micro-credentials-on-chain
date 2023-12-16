@@ -16,6 +16,7 @@ export interface BadgeFormValues {
 
 interface BadgeFormProps {
   onSubmit: (values: BadgeFormValues, helpers: FormikHelpers<BadgeFormValues>) => void;
+  onOrganisationChange: (organisation_id: bigint) => void;
   organisations: Organisation[];
   users: User[];
   disabled?: boolean;
@@ -95,6 +96,9 @@ export const BadgeForm: React.FC<BadgeFormProps> = (props) => {
                 value: o.organisationID,
                 label: o.name,
               }))}
+              onChange={(event) => {
+                props.onOrganisationChange(BigInt(event.target.value));
+              }}
               disabled={props.disabled}
             />
           </div>

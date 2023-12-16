@@ -1,5 +1,10 @@
 // We need this type to handle optional values from the Internet Computer
 export type OptionalText = [] | [string];
+export type OptionalBigInt = [] | [bigint];
+
+export const STUDENT_ROLE_ID = 1n;
+export const LECTURER_ROLE_ID = 2n;
+export const ADMINISTRATION_ROLE_ID = 3n;
 
 export type Result<T> = { ok: T } | { error: string };
 

@@ -1,10 +1,10 @@
 import { BackendActor } from "../../../lib/backend";
-import { NewUserRequest, Result, Role, User } from "../../models";
+import { NewUserRequest, OptionalBigInt, Result, Role, User } from "../../models";
 import { UsersAPI } from "../api";
 
 export const usersAPI = (actor: BackendActor): UsersAPI => ({
-  async getAll(): Promise<Result<Array<User>>> {
-    return (await actor.users_get_all()) as Result<Array<User>>;
+  async getAll(organisation_id: OptionalBigInt, role_id: OptionalBigInt): Promise<Result<Array<User>>> {
+    return (await actor.users_get_all(organisation_id, role_id)) as Result<Array<User>>;
   },
   async getOne(id: bigint): Promise<Result<User>> {
     return (await actor.users_get_one(id)) as Result<User>;

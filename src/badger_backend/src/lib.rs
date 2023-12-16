@@ -75,8 +75,33 @@ fn organisations_create_one(org: NewOrganisation) -> Response<Organisation> {
 }
 
 #[query]
-fn users_get_all() -> Response<Vec<User>> {
-    USERS.with(|users| Response::Ok(users.borrow().values().cloned().collect()))
+fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Response<Vec<User>> {
+    authenticate_caller();
+
+    // org_filter is a function that returns true if the user has the organisation.
+    // If there is no organisation provided, it returns true for all users.
+    let org_filter = |user: &User| match organisation_id {
+        Some(organisation_id) => user.organisation_id == organisation_id,
+        None => true,
+    };
+
+    // role_filter is a function that returns true if the user has the role.
+    // If there is no role provided, it returns true for all users.
+    let role_filter = |user: &User| match role_id {
+        Some(role_id) => user.roles.iter().any(|r| r.id == role_id),
+        None => true,
+    };
+
+    USERS.with(|users| {
+        let users = users.borrow();
+        let users: Vec<User> = users.values().cloned().collect();
+        let users: Vec<User> = users
+            .into_iter()
+            .filter(org_filter)
+            .filter(role_filter)
+            .collect();
+        Response::Ok(users)
+    })
 }
 
 #[query]

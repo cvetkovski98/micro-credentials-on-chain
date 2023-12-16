@@ -3,6 +3,7 @@ import {
   NewBadgeRequest,
   NewOrganisationRequest,
   NewUserRequest,
+  OptionalBigInt,
   Organisation,
   Result,
   Role,
@@ -24,7 +25,7 @@ export interface OrganisationsAPI {
 }
 
 export interface UsersAPI {
-  getAll(): Promise<Result<User[]>>;
+  getAll(organisation_id: OptionalBigInt, role_id: OptionalBigInt): Promise<Result<User[]>>;
   getOne(id: bigint): Promise<Result<User>>;
   getWhoAmI(): Promise<Result<User>>;
   createOne(user: NewUserRequest): Promise<Result<User>>;

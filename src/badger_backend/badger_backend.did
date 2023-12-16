@@ -143,7 +143,7 @@ service badger : {
 
     // users
     users_whoami : () -> (UserGetOneResponse);
-    users_get_all : () -> (UserGetAllResponse);
+    users_get_all : (organisation_id : opt nat, role_id : opt nat) -> (UserGetAllResponse);
     users_get_one : (id : nat) -> (UserGetOneResponse);
     users_delete_one : (id : nat) -> (UserDeleteOneResponse);
     users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
