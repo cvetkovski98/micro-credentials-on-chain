@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useClient } from "../context/Global";
+import { useClient, useUser } from "../context/Global";
 import { XIcon } from "./icons/XIcon";
 
 const routes = [
@@ -36,15 +36,16 @@ interface NavBarProps {
 }
 
 export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
-  const client = useClient();
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const client = useClient();
+  const user = useUser();
 
-  useEffect(() => {
-    client.isAuthenticated().then((auth) => setIsAuthenticated(auth));
-  }, [client.getIdentity()]);
+  const logout: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.preventDefault();
 
-  const logout = () => {
+    const sure = confirm("Are you sure you want to log out?");
+    if (!sure) return;
+
     client.logout();
     navigate("/");
     window.location.reload();
@@ -74,18 +75,24 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
             </Link>
             <div className="hidden ml-auto sm:ml-6 sm:flex">
               <div className="flex space-x-4">
-                {isAuthenticated && (
+                {user && (
                   <React.Fragment>
                     {routes.map((route) => (
                       <Item key={route.path} to={route.path}>
                         {route.label}
                       </Item>
                     ))}
-                    <Item>
-                      <button type="button" onClick={logout}>
+                    <div className="flex flex-row items-center text-white text-sm font-medium space-x-4">
+                      <div className="border-l border-gray-700 h-6 self-center" />
+                      <button
+                        type="button"
+                        onClick={logout}
+                        className="border text-gray-300 border-gray-700 px-3 py-2 rounded-md hover:bg-gray-700 hover:text-white"
+                      >
                         Log out
                       </button>
-                    </Item>
+                      <span>Welcome {user.name}</span>
+                    </div>
                   </React.Fragment>
                 )}
               </div>
