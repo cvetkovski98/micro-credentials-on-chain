@@ -38,16 +38,15 @@ fn organisations_get_all() -> Response<Vec<Organisation>> {
 fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Response<Vec<User>> {
     authenticate_caller();
 
-    // org_filter is a function that returns true if the user has the organisation.
-    // If there is no organisation provided, it returns true for all users.
-    fn f(user: &User, org_id: Option<u128>, role_id: Option<u128>) -> bool {
+    /// user_filter returns true if the user matches the given organisation and role.
+    fn user_filter(user: &User, org_id: Option<u128>, role_id: Option<u128>) -> bool {
         let org_filter = |user: &User| match org_id {
             Some(org_id) => user.organisation_id == org_id,
             None => true,
         };
 
         let role_filter = |user: &User| match role_id {
-            Some(role_id) => user.roles.iter().any(|r| r.id == role_id),
+            Some(role_id) => user.has_role(role_id),
             None => true,
         };
 
@@ -59,7 +58,7 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
         let users: Vec<User> = principals
             .values()
             .cloned()
-            .filter(|u| f(u, organisation_id, role_id))
+            .filter(|user| user_filter(user, organisation_id, role_id))
             .collect();
         Response::Ok(users)
     })
@@ -211,13 +210,7 @@ fn badges_revoke_one(badge_id: u128) -> Response<bool> {
 
     let user = user.unwrap();
 
-    let is_student = user
-        .roles
-        .iter()
-        .find(|r| r.id == STUDENT_ROLE_ID)
-        .is_some();
-
-    if is_student {
+    if user.is_student() {
         return Response::Err(String::from("Students cannot revoke badges."));
     }
 
@@ -250,20 +243,9 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
     }
 
     let user = user.unwrap();
+    let is_lecturer = user.is_lecturer();
 
-    let is_admin = user
-        .roles
-        .iter()
-        .find(|r| r.id == ADMINISTRATOR_ROLE_ID)
-        .is_some();
-
-    let is_lecturer = user
-        .roles
-        .iter()
-        .find(|r| r.id == LECTURER_ROLE_ID)
-        .is_some();
-
-    if !is_admin && !is_lecturer {
+    if !user.is_admin() && !is_lecturer {
         return Response::Err(format!(
             "User with principal {} is not an administrator or lecturer and cannot create badges.",
             p

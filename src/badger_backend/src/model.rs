@@ -1,12 +1,13 @@
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
-use crate::{BadgesMap, UsersMap};
+use crate::{BadgesMap, UsersMap, ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, STUDENT_ROLE_ID};
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub enum Response<T> {
     #[serde(rename = "ok")]
     Ok(T),
+
     #[serde(rename = "error")]
     Err(String),
 }
@@ -14,6 +15,7 @@ pub enum Response<T> {
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Claim {
     pub key: String,
+
     pub value: String,
 }
 
@@ -92,6 +94,24 @@ pub struct User {
     pub created_at: u64,
 
     pub roles: Vec<Role>,
+}
+
+impl User {
+    pub fn has_role(&self, role_id: u128) -> bool {
+        self.roles.iter().any(|r| r.id == role_id)
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.has_role(ADMINISTRATOR_ROLE_ID)
+    }
+
+    pub fn is_lecturer(&self) -> bool {
+        self.has_role(LECTURER_ROLE_ID)
+    }
+
+    pub fn is_student(&self) -> bool {
+        self.has_role(STUDENT_ROLE_ID)
+    }
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]

@@ -19,23 +19,9 @@ pub fn authenticate_caller() -> Principal {
 /// If the user is a lecturer, they have access to all badges issued by their organisation.
 /// If the user is a student, they have access to all badges they own.
 pub fn has_role_based_badge_access(user: &User, badge: &Badge) -> bool {
-    let is_admin = user.roles.iter().any(|r| r.id == ADMINISTRATOR_ROLE_ID);
-    let is_lecturer = user.roles.iter().any(|r| r.id == LECTURER_ROLE_ID);
-    let is_student = user.roles.iter().any(|r| r.id == STUDENT_ROLE_ID);
-
-    if is_admin {
-        return true;
-    }
-
-    if is_lecturer {
-        return user.organisation_id == badge.issuer.id;
-    }
-
-    if is_student {
-        return user.principal_id == badge.owner.principal_id;
-    }
-
-    false
+    user.is_admin()
+        || (user.is_lecturer() && user.organisation_id == badge.issuer.id)
+        || (user.is_student() && user.principal_id == badge.owner.principal_id)
 }
 
 pub fn generate_organisations() {
