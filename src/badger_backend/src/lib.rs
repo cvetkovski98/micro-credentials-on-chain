@@ -13,6 +13,7 @@ use std::str::FromStr;
 const STUDENT_ROLE_ID: u128 = 1;
 const LECTURER_ROLE_ID: u128 = 2;
 const ADMINISTRATOR_ROLE_ID: u128 = 3;
+const COMPANY_ROLE_ID: u128 = 4;
 
 type UsersMap = BTreeMap<Principal, User>;
 type OrganizationsMap = BTreeMap<u128, Organisation>;
@@ -65,12 +66,7 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
             None => true,
         };
 
-        let allowed = org_filter(other_user) && role_filter(other_user);
-        match allowed {
-            true => println!("Allowing access to user {:?}", other_user),
-            false => println!("Denying access to user {:?}", other_user),
-        }
-        allowed
+        org_filter(other_user) && role_filter(other_user)
     }
 
     PRINCIPALS.with(|principals| {
@@ -189,7 +185,10 @@ fn users_create_one(user: NewUser) -> Response<User> {
 }
 
 #[query]
-fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
+fn badges_get_all(
+    principal_id: Option<String>,
+    organisation_id: Option<u128>,
+) -> Response<Vec<Badge>> {
     let p = authenticated_caller();
     let user = authenticated_user(p);
 
@@ -199,23 +198,36 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
 
     let user = user.unwrap();
 
-    fn f(user: &User, badge: &Badge, organisation_id: Option<u128>) -> bool {
-        if !user.has_badge_access(badge) {
+    fn f(
+        user: &User,
+        badge: &Badge,
+        principal_id: Option<String>,
+        organisation_id: Option<u128>,
+    ) -> bool {
+        if !user.has_badge_access(&badge) {
             return false;
         }
 
-        match organisation_id {
-            Some(organisation_id) => badge.issuer.id == organisation_id,
+        let org_filter = |badge: &Badge| match organisation_id {
+            Some(org_id) => badge.issuer.id == org_id,
             None => true,
-        }
+        };
+
+        let principal_filter = |badge: &Badge| match principal_id {
+            Some(principal_id) => badge.owner.principal_id == principal_id,
+            None => true,
+        };
+
+        org_filter(badge) && principal_filter(badge)
     }
 
     BADGES.with(|badges| {
+        let badges = badges.borrow();
         let badges: Vec<Badge> = badges
-            .borrow()
             .values()
-            .filter(|b| f(&user, b, organisation_id))
             .cloned()
+            .filter(|badge| f(&user, badge, principal_id.clone(), organisation_id))
+            .map(|b| util::clear_claims(&user, &b))
             .collect();
         Response::Ok(badges)
     })
@@ -240,7 +252,7 @@ fn badges_get_one(badge_id: u128) -> Response<Badge> {
                     p, badge_id
                 ));
             }
-            Response::Ok(badge.clone())
+            Response::Ok(util::clear_claims(&user, badge))
         }
         None => Response::Err(format!("Badge with id {} not found.", badge_id)),
     })
@@ -257,15 +269,19 @@ fn badges_revoke_one(badge_id: u128) -> Response<bool> {
 
     let user = user.unwrap();
 
-    if user.is_student() {
-        return Response::Err(String::from("Students cannot revoke badges."));
-    }
-
     BADGES.with(|badges| match badges.borrow_mut().get_mut(&badge_id) {
         Some(badge) => {
             if !user.has_badge_access(badge) {
                 return Response::Err(format!(
                     "User with principal {} does not have access to badge with id {}.",
+                    p, badge_id
+                ));
+            }
+            // A badge can be revoked by an admin or a lecturer.
+            // Furthermore, the lecturer has to be from the same organisation as the issuer.
+            if !user.is_admin() && !user.is_lecturer() || user.organisation.id != badge.issuer.id {
+                return Response::Err(format!(
+                    "User with principal {} cannot revoke badge with id {}.",
                     p, badge_id
                 ));
             }
@@ -286,22 +302,12 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
     }
 
     let user = user.unwrap();
-    let is_lecturer = user.is_lecturer();
 
-    if !user.is_admin() && !is_lecturer {
+    if !user.can_create_or_revoke(&badge) {
         return Response::Err(format!(
-            "User with principal {} is not an administrator or lecturer and cannot create badges.",
-            p
+            "User with principal {} cannot issue badge for organisation with id {}.",
+            p, badge.issuer_id
         ));
-    }
-
-    if is_lecturer {
-        if badge.issuer_id != user.organisation.id {
-            return Response::Err(format!(
-                "User with principal {} is not a member of organisation {} and cannot create badges for it.",
-                p, badge.issuer_id
-            ));
-        }
     }
 
     let organisation = ORGANISATIONS.with(|orgs| {

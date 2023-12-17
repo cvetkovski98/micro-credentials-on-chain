@@ -1,7 +1,9 @@
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
-use crate::{BadgesMap, UsersMap, ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, STUDENT_ROLE_ID};
+use crate::{
+    BadgesMap, UsersMap, ADMINISTRATOR_ROLE_ID, COMPANY_ROLE_ID, LECTURER_ROLE_ID, STUDENT_ROLE_ID,
+};
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub enum Response<T> {
@@ -113,12 +115,21 @@ impl User {
         self.has_role(STUDENT_ROLE_ID)
     }
 
+    pub fn is_company(&self) -> bool {
+        self.has_role(COMPANY_ROLE_ID)
+    }
+
+    pub fn can_create_or_revoke(&self, badge: &NewBadge) -> bool {
+        self.is_admin() || (self.is_lecturer() && self.organisation.id == badge.issuer_id)
+    }
+
     /// Checks if the user has access to the badge.
     /// If the user is an administrator, they have access to all badges.
     /// If the user is a lecturer, they have access to all badges issued by their organisation.
     /// If the user is a student, they have access to all badges they own.
     pub fn has_badge_access(&self, badge: &Badge) -> bool {
         self.is_admin()
+            || self.is_company() // Companies can access all badges however claim masking should be done afterwards
             || (self.is_lecturer() && self.organisation.id == badge.issuer.id)
             || (self.is_student() && self.principal_id == badge.owner.principal_id)
     }
@@ -129,6 +140,7 @@ impl User {
     /// If the user is a student, they have access to all users they own.
     pub fn has_user_access(&self, other_user: &User) -> bool {
         self.is_admin()
+            || self.is_company() // Companies can access all users however claim masking should be done afterwards
             || (self.is_lecturer()
                 && (self.organisation.id == other_user.organisation.id || other_user.is_student()))
             || (self.is_student() && self.principal_id == other_user.principal_id)

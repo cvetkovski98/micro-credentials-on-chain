@@ -1,10 +1,10 @@
 import { BackendActor } from "../../../lib/backend";
-import { Badge, NewBadgeRequest, OptionalBigInt, Result } from "../../models";
+import { Badge, NewBadgeRequest, OptionalBigInt, OptionalText, Result } from "../../models";
 import { BadgesAPI } from "../api";
 
 export const badgesAPI = (actor: BackendActor): BadgesAPI => ({
-  async getAll(organisationID: OptionalBigInt): Promise<Result<Array<Badge>>> {
-    return (await actor.badges_get_all(organisationID)) as Result<Array<Badge>>;
+  async getAll(principalID: OptionalText, organisationID: OptionalBigInt): Promise<Result<Array<Badge>>> {
+    return (await actor.badges_get_all(principalID, organisationID)) as Result<Array<Badge>>;
   },
   async getOne(badgeID: bigint): Promise<Result<Badge>> {
     return (await actor.badges_get_one(badgeID)) as Result<Badge>;

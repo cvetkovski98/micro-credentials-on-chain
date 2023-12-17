@@ -24,6 +24,8 @@ export interface Badge {
   badgeType: number;
   issuer: Organisation;
   owner: User;
+  isRevoked: boolean;
+  isFullAccess: boolean;
   claims: Claim[];
   signedBy: string[];
   createdAt: string;

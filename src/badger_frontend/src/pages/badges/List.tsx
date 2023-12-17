@@ -17,7 +17,7 @@ export const BadgeListPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    RemoteBadgesAPI.getAll([])
+    RemoteBadgesAPI.getAll([], [])
       .then((value) => {
         if (isOK(value)) setBadges(value.ok);
         else setError(value.error);

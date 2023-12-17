@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { badgesAPI } from "../../badges/api/remote/badges";
 import { usersAPI } from "../../badges/api/remote/users";
-import { User, isOK } from "../../badges/models";
+import { Badge, User, isOK } from "../../badges/models";
 import { useBackendActor } from "../../context/Global";
 
 export const UserDetailsPage: React.FC = () => {
@@ -9,17 +10,23 @@ export const UserDetailsPage: React.FC = () => {
   const actor = useBackendActor();
 
   const RemoteUsersAPI = usersAPI(actor);
+  const RemoteBadgesAPI = badgesAPI(actor);
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [user, setUser] = React.useState<User>();
+  const [badges, setBadges] = React.useState<Badge[]>([]);
 
-  useEffect(() => {
+  function loadData() {
     setLoading(true);
-    RemoteUsersAPI.getOne(id)
-      .then((value) => {
-        if (isOK(value)) setUser(value.ok);
-        else setError(value.error);
+
+    Promise.all([RemoteUsersAPI.getOne(id), RemoteBadgesAPI.getAll([id], [])])
+      .then(([userResponse, badgesResponse]) => {
+        if (isOK(userResponse)) setUser(userResponse.ok);
+        else setError(userResponse.error);
+
+        if (isOK(badgesResponse)) setBadges(badgesResponse.ok);
+        else setError(badgesResponse.error);
       })
       .catch((error) => {
         setError(error.message);
@@ -27,7 +34,9 @@ export const UserDetailsPage: React.FC = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, [id]);
+  }
+
+  useEffect(loadData, [id]);
 
   if (loading || !user) {
     return <div>Loading...</div>;
@@ -73,6 +82,26 @@ export const UserDetailsPage: React.FC = () => {
                     </dd>
                   </React.Fragment>
                 ))}
+              </div>
+              <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">User Badges</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 space-y-4">
+                  {badges.length == 0 ? (
+                    <div>No badges found.</div>
+                  ) : (
+                    badges.map((badge) => (
+                      <div className="flex flex-row items-center text-sm font-medium space-x-4">
+                        <div className="w-3/4">
+                          <h4>{badge.title}</h4>
+                          <p className="text-gray-500 overflow-ellipsis">{badge.description}</p>
+                        </div>
+                        <div className="cursor-pointer font-medium text-blue-600 dark:text-blue-500 hover:underline">
+                          Get access
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </dd>
               </div>
             </dl>
           </div>

@@ -2,8 +2,9 @@ use candid::Principal;
 use ic_cdk::api::{caller, time};
 
 use crate::{
-    model::{Organisation, Role, User},
-    ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, ORGANISATIONS, PRINCIPALS, ROLES, STUDENT_ROLE_ID,
+    model::{Badge, Organisation, Role, User},
+    ADMINISTRATOR_ROLE_ID, COMPANY_ROLE_ID, LECTURER_ROLE_ID, ORGANISATIONS, PRINCIPALS, ROLES,
+    STUDENT_ROLE_ID,
 };
 
 pub fn authenticated_caller() -> Principal {
@@ -16,6 +17,15 @@ pub fn authenticated_caller() -> Principal {
 
 pub fn authenticated_user(p: Principal) -> Option<User> {
     PRINCIPALS.with(|it| it.borrow().get(&p).cloned())
+}
+
+/// clear_claims returns a copy of the badge with all claims removed if the user is a company.
+pub fn clear_claims(user: &User, badge: &Badge) -> Badge {
+    let mut result = badge.clone();
+    if user.is_company() {
+        result.claims = Vec::new();
+    }
+    result
 }
 
 pub fn generate_organisations() {
@@ -49,6 +59,7 @@ pub fn generate_roles() {
         (STUDENT_ROLE_ID, String::from("Student")),
         (LECTURER_ROLE_ID, String::from("Lecturer")),
         (ADMINISTRATOR_ROLE_ID, String::from("Administator")),
+        (COMPANY_ROLE_ID, String::from("Company")),
     ];
 
     ROLES.with(|roles| {

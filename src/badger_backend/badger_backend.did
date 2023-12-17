@@ -11,6 +11,7 @@ type Badge = record {
     issuer : Organisation;
     owner : User;
     isRevoked : bool;
+    isFullAccess : bool;
     claims : vec Claim;
     signedBy : vec text;
     createdAt : nat64;
@@ -117,7 +118,7 @@ service badger : {
     users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
 
     // badges
-    badges_get_all : (organisation_id : opt nat) -> (BadgeGetAllResponse);
+    badges_get_all : (principal_id: opt text, organisation_id : opt nat) -> (BadgeGetAllResponse);
     badges_get_one : (badge_id : nat) -> (BadgeGetOneResponse);
     badges_revoke_one : (badge_id : nat) -> (BadgeDeleteOneResponse);
     badges_create_one : (badge : NewBadge) -> (BadgeCreateOneResponse);
