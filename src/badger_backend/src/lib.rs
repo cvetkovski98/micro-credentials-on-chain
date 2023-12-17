@@ -56,7 +56,7 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
         }
 
         let org_filter = |user: &User| match org_id {
-            Some(org_id) => user.organisation_id == org_id,
+            Some(org_id) => user.organisation.id == org_id,
             None => true,
         };
 
@@ -65,7 +65,12 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
             None => true,
         };
 
-        org_filter(other_user) && role_filter(other_user)
+        let allowed = org_filter(other_user) && role_filter(other_user);
+        match allowed {
+            true => println!("Allowing access to user {:?}", other_user),
+            false => println!("Denying access to user {:?}", other_user),
+        }
+        allowed
     }
 
     PRINCIPALS.with(|principals| {
@@ -76,6 +81,42 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
             .filter(|user| user_filter(&auth_user, user, organisation_id, role_id))
             .collect();
         Response::Ok(users)
+    })
+}
+
+#[query]
+fn users_get_one(principal_id: String) -> Response<User> {
+    let p = authenticated_caller();
+    let auth_user = PRINCIPALS.with(|it| it.borrow().get(&p).cloned());
+
+    if auth_user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
+    }
+
+    let auth_user = auth_user.unwrap();
+
+    let principal = Principal::from_str(&principal_id);
+
+    if principal.is_err() {
+        return Response::Err(format!("Invalid principal id: {}", principal_id));
+    }
+
+    let principal = principal.unwrap();
+
+    PRINCIPALS.with(|principals| {
+        let principals = principals.borrow();
+        match principals.get(&principal) {
+            Some(user) => {
+                if !auth_user.has_user_access(user) {
+                    return Response::Err(format!(
+                        "User with principal {} does not have access to user with principal {}.",
+                        p, principal_id
+                    ));
+                }
+                Response::Ok(user.clone())
+            }
+            None => Response::Err(format!("User with principal {} not found.", principal_id)),
+        }
     })
 }
 
@@ -135,7 +176,7 @@ fn users_create_one(user: NewUser) -> Response<User> {
         principal_id: p.to_string(),
         name: user.name.clone(),
         email: user.email.clone(),
-        organisation_id: user.organisation_id,
+        organisation: organisation.unwrap(),
         roles: roles_result.unwrap(),
         created_at: time(),
     };
@@ -255,7 +296,7 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
     }
 
     if is_lecturer {
-        if badge.issuer_id != user.organisation_id {
+        if badge.issuer_id != user.organisation.id {
             return Response::Err(format!(
                 "User with principal {} is not a member of organisation {} and cannot create badges for it.",
                 p, badge.issuer_id

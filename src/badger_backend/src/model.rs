@@ -87,8 +87,8 @@ pub struct User {
     #[serde(rename = "principalID")]
     pub principal_id: String,
 
-    #[serde(rename = "organisationID")]
-    pub organisation_id: u128,
+    #[serde(rename = "organisation")]
+    pub organisation: Organisation,
 
     #[serde(rename = "createdAt")]
     pub created_at: u64,
@@ -119,7 +119,7 @@ impl User {
     /// If the user is a student, they have access to all badges they own.
     pub fn has_badge_access(&self, badge: &Badge) -> bool {
         self.is_admin()
-            || (self.is_lecturer() && self.organisation_id == badge.issuer.id)
+            || (self.is_lecturer() && self.organisation.id == badge.issuer.id)
             || (self.is_student() && self.principal_id == badge.owner.principal_id)
     }
 
@@ -129,8 +129,8 @@ impl User {
     /// If the user is a student, they have access to all users they own.
     pub fn has_user_access(&self, other_user: &User) -> bool {
         self.is_admin()
-            || (self.is_lecturer() && self.organisation_id == other_user.organisation_id
-                || other_user.is_student())
+            || (self.is_lecturer()
+                && (self.organisation.id == other_user.organisation.id || other_user.is_student()))
             || (self.is_student() && self.principal_id == other_user.principal_id)
     }
 }

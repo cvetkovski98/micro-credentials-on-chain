@@ -58,7 +58,7 @@ export const GlobalContextProvider: React.FC<PropsWithChildren<GlobalContextType
               .getWhoAmI()
               .then((resp) => {
                 if (isOK(resp)) {
-                  console.debug("Loaded user successfully");
+                  console.debug("Loaded user successfully: ", resp.ok);
                   setUser(() => resp.ok);
                 } else {
                   console.debug("Tried to load user but it was not found. Error: ", resp.error);

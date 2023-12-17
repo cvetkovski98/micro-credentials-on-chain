@@ -8,6 +8,10 @@ const routes = [
     label: "Badges",
     path: "/badges",
   },
+  {
+    label: "Users",
+    path: "/users",
+  },
 ];
 
 export interface ItemProps extends React.PropsWithChildren {

@@ -8,6 +8,8 @@ import { Layout } from "./Layout";
 import { BadgeCreatePage } from "./badges/Create";
 import { BadgeDetailsPage } from "./badges/Details";
 import { BadgeListPage } from "./badges/List";
+import { UserDetailsPage } from "./users/Details";
+import { UserListPage } from "./users/List";
 import { UserRegisterPage } from "./users/Register";
 
 export const PageRouter = createHashRouter([
@@ -54,10 +56,26 @@ export const PageRouter = createHashRouter([
         ),
       },
       {
+        path: "users",
+        element: (
+          <ProtectedPage>
+            <UserListPage />
+          </ProtectedPage>
+        ),
+      },
+      {
         path: "users/register",
         element: (
           <ProtectedPage>
             <UserRegisterPage />
+          </ProtectedPage>
+        ),
+      },
+      {
+        path: "users/:id",
+        element: (
+          <ProtectedPage>
+            <UserDetailsPage />
           </ProtectedPage>
         ),
       },

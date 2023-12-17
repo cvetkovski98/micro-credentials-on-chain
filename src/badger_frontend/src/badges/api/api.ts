@@ -13,6 +13,7 @@ export interface OrganisationsAPI {
 
 export interface UsersAPI {
   getAll(organisation_id: OptionalBigInt, role_id: OptionalBigInt): Promise<Result<User[]>>;
+  getOne(principalID: string): Promise<Result<User>>;
   getWhoAmI(): Promise<Result<User>>;
   createOne(user: NewUserRequest): Promise<Result<User>>;
   getAllRoles(): Promise<Result<Role[]>>;

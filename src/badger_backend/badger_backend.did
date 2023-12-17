@@ -35,7 +35,7 @@ type User = record {
     name : text;
     email : text;
     principalID: text;
-    organisationID : nat;
+    organisation : Organisation;
     roles : vec Role;
     createdAt : nat64;
 };
@@ -113,6 +113,7 @@ service badger : {
     // users
     users_whoami : () -> (UserGetOneResponse);
     users_get_all : (organisation_id : opt nat, role_id : opt nat) -> (UserGetAllResponse);
+    users_get_one : (principal_id : text) -> (UserGetOneResponse);
     users_create_one : (user : NewUserRequest) -> (UserCreateOneResponse);
 
     // badges

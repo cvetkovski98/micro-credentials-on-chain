@@ -48,7 +48,7 @@ export interface User {
   name: string;
   email: string;
   principalID: string;
-  organisationID: number;
+  organisation: Organisation;
   roles: Role[];
   createdAt: string;
 }
