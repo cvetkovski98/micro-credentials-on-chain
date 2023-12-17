@@ -4,7 +4,8 @@ mod util;
 use crate::model::{Badge, NewBadge, NewUser, Organisation, Response, Role, User};
 use candid::Principal;
 use ic_cdk::api::time;
-use ic_cdk::{init, post_upgrade, query, update};
+use ic_cdk::{init, post_upgrade, pre_upgrade, query, storage, update};
+use model::StableData;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -326,10 +327,40 @@ fn roles_get_all() -> Response<Vec<Role>> {
     ROLES.with(|roles| Response::Ok(roles.borrow().values().cloned().collect()))
 }
 
+#[pre_upgrade]
+fn pre_upgrade() {
+    // Create an instance of stable data and persist it in stable memory
+    let stable_data = StableData {
+        principals: PRINCIPALS.with(|principals| principals.borrow().clone()),
+        badges: BADGES.with(|badges| badges.borrow().clone()),
+    };
+
+    storage::stable_save((stable_data,)).expect("Could not save stable data.");
+}
+
 #[post_upgrade]
 fn post_upgrade() {
     util::generate_organisations();
     util::generate_roles();
+
+    // Load the stable data that was saved in pre_upgrade
+    let (stable_data,): (StableData,) =
+        storage::stable_restore().expect("Could not restore stable data.");
+
+    // Load the stable data into the new data structures
+    PRINCIPALS.with(|principals| {
+        let mut principals = principals.borrow_mut();
+        for (p, user) in stable_data.principals {
+            principals.insert(p, user);
+        }
+    });
+
+    BADGES.with(|badges| {
+        let mut badges = badges.borrow_mut();
+        for (id, badge) in stable_data.badges {
+            badges.insert(id, badge);
+        }
+    });
 }
 
 #[init]

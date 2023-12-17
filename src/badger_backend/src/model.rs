@@ -1,6 +1,8 @@
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
+use crate::{BadgesMap, UsersMap};
+
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub enum Response<T> {
     #[serde(rename = "ok")]
@@ -115,4 +117,11 @@ pub struct Role {
     pub id: u128,
 
     pub name: String,
+}
+
+#[derive(CandidType, Serialize, Deserialize)]
+pub struct StableData {
+    pub principals: UsersMap,
+
+    pub badges: BadgesMap,
 }
