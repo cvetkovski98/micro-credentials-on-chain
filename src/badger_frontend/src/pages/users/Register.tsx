@@ -15,49 +15,33 @@ export const UserRegisterPage: React.FC = () => {
   const RemoteUsersAPI = usersAPI(actor);
 
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
-  const [orgLoading, setOrgLoading] = useState(false);
-
   const [roles, setRoles] = useState<Role[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function loadOrganisations() {
-    setOrgLoading(true);
-    RemoteOrganisationsAPI.getAll()
-      .then((value) => {
-        if (isOK(value)) setOrganisations(value.ok);
-        else setError(value.error);
+  function loadData() {
+    setLoading(true);
+
+    Promise.all([RemoteOrganisationsAPI.getAll(), RemoteUsersAPI.getAllRoles()])
+      .then(([orgResponse, rolesResponse]) => {
+        if (isOK(orgResponse)) setOrganisations(orgResponse.ok);
+        else setError(orgResponse.error);
+
+        if (isOK(rolesResponse)) setRoles(rolesResponse.ok);
+        else setError(rolesResponse.error);
       })
       .catch((error) => {
         setError(error.message);
       })
       .finally(() => {
-        setOrgLoading(false);
+        setLoading(false);
       });
   }
 
-  function loadRoles() {
-    setRolesLoading(true);
-    RemoteUsersAPI.getAllRoles()
-      .then((value) => {
-        if (isOK(value)) setRoles(value.ok);
-        else setError(value.error);
-      })
-      .catch((error) => {
-        setError(error.message);
-      })
-      .finally(() => {
-        setRolesLoading(false);
-      });
-  }
-
-  useEffect(() => {
-    loadOrganisations();
-    loadRoles();
-  }, []);
+  useEffect(loadData, []);
 
   const handleSubmit = (values: UserFormValues) => {
     const payload: NewUserRequest = {
@@ -109,7 +93,7 @@ export const UserRegisterPage: React.FC = () => {
           onSubmit={handleSubmit}
           organisations={organisations}
           roles={roles}
-          disabled={orgLoading || rolesLoading || submitting}
+          disabled={loading || submitting}
         />
       </div>
     </React.Fragment>
