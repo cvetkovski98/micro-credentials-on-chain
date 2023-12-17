@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { badgesAPI } from "../../badges/api/remote/badges";
-import { Badge, isOK } from "../../badges/models";
+import { ADMINISTRATION_ROLE_ID, Badge, LECTURER_ROLE_ID, isOK } from "../../badges/models";
+import { ProtectedComponent } from "../../components/ProtectedRender";
 import { useBackendActor } from "../../context/Global";
 
 export const BadgeDetailsPage: React.FC = () => {
@@ -13,6 +14,9 @@ export const BadgeDetailsPage: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [badge, setBadge] = React.useState<Badge>();
+
+  const [revoked, setRevoked] = React.useState(false);
+  const [revoking, setRevoking] = React.useState(false);
 
   useEffect(() => {
     const badgeID: bigint = BigInt(id);
@@ -41,6 +45,11 @@ export const BadgeDetailsPage: React.FC = () => {
   return (
     <React.Fragment>
       <div className="max-w-2xl mx-auto">
+        {revoking && (
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Revoking...</strong>
+          </div>
+        )}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">Badge Details</h3>
@@ -113,6 +122,35 @@ export const BadgeDetailsPage: React.FC = () => {
             <p className="text-xs break-words leading-5 font-mono">{badge.signedBy.join(", ")}</p>
           </div>
         </div>
+        <ProtectedComponent roles={[ADMINISTRATION_ROLE_ID, LECTURER_ROLE_ID]}>
+          <div className="mt-4">
+            <button
+              type="button"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-red-600 hover:bg-red-500 focus:outline-none focus:shadow-outline-red active:bg-red-700 transition ease-in-out duration-150"
+              disabled={revoking || badge.isRevoked || revoked}
+              onClick={() => {
+                setRevoking(true);
+                RemoteBadgesAPI.revokeOne(badge.badgeID)
+                  .then((value) => {
+                    if (isOK(value)) {
+                      setRevoked(true);
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 1300);
+                    } else setError(value.error);
+                  })
+                  .catch((error) => {
+                    setError(error.message);
+                  })
+                  .finally(() => {
+                    setRevoking(false);
+                  });
+              }}
+            >
+              Revoke
+            </button>
+          </div>
+        </ProtectedComponent>
       </div>
     </React.Fragment>
   );

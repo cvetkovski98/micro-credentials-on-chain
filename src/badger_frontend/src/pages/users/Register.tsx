@@ -59,7 +59,7 @@ export const UserRegisterPage: React.FC = () => {
           updateUser(resp.ok);
           setTimeout(() => {
             navigate("/badges");
-          }, 2000);
+          }, 1300);
         } else {
           setError(resp.error);
         }

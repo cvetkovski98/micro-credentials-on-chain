@@ -11,7 +11,7 @@ type Badge = record {
     issuer : Organisation;
     owner : User;
     isRevoked : bool;
-    isFullAccess : bool;
+    // isFullAccess : bool;
     claims : vec Claim;
     signedBy : vec text;
     createdAt : nat64;

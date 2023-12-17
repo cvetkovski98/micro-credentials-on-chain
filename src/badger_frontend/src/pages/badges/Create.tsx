@@ -77,7 +77,7 @@ export const BadgeCreatePage: React.FC = () => {
           setSuccess("Badge created successfully");
           setTimeout(() => {
             navigate("/badges");
-          }, 2000);
+          }, 1300);
         } else {
           setError(resp.error);
         }
