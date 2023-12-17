@@ -451,6 +451,24 @@ fn requests_create_one(badge_id: u128) -> Response<AccessRequest> {
     }
     let owning_principal = owning_principal.unwrap();
 
+    let already_approved = BADGE_ACCESS_APPROVALS.with(|approvals| {
+        let approvals = approvals.borrow();
+        let approved_for_badge = approvals.get(&badge_id);
+        if approved_for_badge.is_none() {
+            return false;
+        }
+        let approved_for_badge = approved_for_badge.unwrap();
+        let requeting_principal = Principal::from_str(&user.principal_id).unwrap();
+        approved_for_badge.contains(&requeting_principal)
+    });
+
+    if already_approved {
+        return Response::Err(format!(
+            "User with principal {} already has access to badge with id {}.",
+            p, badge_id
+        ));
+    }
+
     ACCESS_REQUESTS.with(|requests| {
         let mut requests = requests.borrow_mut();
         let to_store = StoredAccessRequest {
@@ -461,10 +479,17 @@ fn requests_create_one(badge_id: u128) -> Response<AccessRequest> {
         };
 
         if requests.contains_key(&owning_principal) {
-            requests
-                .get_mut(&owning_principal)
-                .unwrap()
-                .push(to_store.clone());
+            let owning_principal_requests = requests.get_mut(&owning_principal).unwrap();
+            if owning_principal_requests
+                .iter()
+                .any(|r| r.badge_id == to_store.badge_id)
+            {
+                return Response::Err(format!(
+                    "User with principal {} already requested access to badge with id {}.",
+                    p, badge_id
+                ));
+            }
+            owning_principal_requests.push(to_store.clone());
         } else {
             requests.insert(owning_principal, vec![to_store.clone()]);
         }

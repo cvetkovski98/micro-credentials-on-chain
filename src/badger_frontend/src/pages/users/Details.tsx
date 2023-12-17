@@ -19,8 +19,9 @@ export const UserDetailsPage: React.FC = () => {
   const [badges, setBadges] = React.useState<Badge[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [requesting, setRequesting] = React.useState<boolean>(false);
+  const [success, setSuccess] = React.useState<boolean>(false);
 
   function loadData() {
     setLoading(true);
@@ -43,12 +44,13 @@ export const UserDetailsPage: React.FC = () => {
 
   function requestAccess(badgeID: bigint) {
     setRequesting(true);
+    setSuccess(false);
+    setError(null);
+
     RemoteAccessRequestsAPI.createOne(badgeID)
       .then((response) => {
         if (isOK(response)) {
-          alert(
-            `Successfully requested access to badge ${badgeID} from principal ${user.principalID}. Created request with id ${response.ok.accessRequestID}`,
-          );
+          setSuccess(true);
         } else {
           setError(response.error);
         }
@@ -61,24 +63,35 @@ export const UserDetailsPage: React.FC = () => {
       });
   }
 
-  useEffect(loadData, [id]);
-
-  if (loading || !user) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
+  useEffect(() => {
+    loadData();
+  }, [id]);
 
   return (
     <React.Fragment>
-      {requesting && (
-        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
-          <strong className="font-bold">Requesting access...</strong>
-        </div>
-      )}
       <div className="max-w-2xl mx-auto">
+        {requesting && (
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Requesting access...</strong>
+          </div>
+        )}
+        {(loading || !user) && (
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Loading...</strong>
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Success!</strong>
+            <span className="block sm:inline">Successfully requested access to badge.</span>
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Error!</strong>
+            <span className="block ml-1 sm:inline">{error}</span>
+          </div>
+        )}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">User Details</h3>
@@ -87,24 +100,24 @@ export const UserDetailsPage: React.FC = () => {
             <dl>
               <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 col-span-3">
                 <dt className="text-sm font-medium text-gray-500">User ID</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.principalID.toString()}</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user?.principalID.toString()}</dd>
               </div>
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">User Name</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.name}</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user?.name}</dd>
               </div>
               <div className="px-4 py-5 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">User Email</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.email}</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user?.email}</dd>
               </div>
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Organisation</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {user.organisation.organisationID.toString()} - {user.organisation.name}
+                  {user?.organisation.organisationID.toString()} - {user?.organisation.name}
                 </dd>
               </div>
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                {user.roles?.map((role, index) => (
+                {user?.roles?.map((role, index) => (
                   <React.Fragment key={index}>
                     <dt className="text-sm font-medium text-gray-500">Role #{index + 1}</dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
