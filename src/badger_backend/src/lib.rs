@@ -1,15 +1,14 @@
 mod model;
 mod util;
 
-use crate::model::{Badge, NewBadge, NewUser, Organisation, Response, Role, User};
+use crate::model::{Badge, NewBadge, NewUser, Organisation, Response, Role, StableData, User};
+use crate::util::{authenticated_caller, authenticated_user};
 use candid::Principal;
 use ic_cdk::api::time;
 use ic_cdk::{init, post_upgrade, pre_upgrade, query, storage, update};
-use model::StableData;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use util::{authenticate_caller, has_role_based_badge_access};
 
 const STUDENT_ROLE_ID: u128 = 1;
 const LECTURER_ROLE_ID: u128 = 2;
@@ -29,17 +28,33 @@ thread_local! {
 
 #[query]
 fn organisations_get_all() -> Response<Vec<Organisation>> {
-    authenticate_caller();
+    authenticated_caller();
 
     ORGANISATIONS.with(|orgs| Response::Ok(orgs.borrow().values().cloned().collect()))
 }
 
 #[query]
 fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Response<Vec<User>> {
-    authenticate_caller();
+    let p = authenticated_caller();
+    let auth_user = PRINCIPALS.with(|it| it.borrow().get(&p).cloned());
 
-    /// user_filter returns true if the user matches the given organisation and role.
-    fn user_filter(user: &User, org_id: Option<u128>, role_id: Option<u128>) -> bool {
+    if auth_user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
+    }
+
+    let auth_user = auth_user.unwrap();
+
+    /// user_filter returns true if the user should be included in the result set.
+    fn user_filter(
+        auth_user: &User,
+        other_user: &User,
+        org_id: Option<u128>,
+        role_id: Option<u128>,
+    ) -> bool {
+        if !auth_user.has_user_access(other_user) {
+            return false;
+        }
+
         let org_filter = |user: &User| match org_id {
             Some(org_id) => user.organisation_id == org_id,
             None => true,
@@ -50,7 +65,7 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
             None => true,
         };
 
-        org_filter(user) && role_filter(user)
+        org_filter(other_user) && role_filter(other_user)
     }
 
     PRINCIPALS.with(|principals| {
@@ -58,7 +73,7 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
         let users: Vec<User> = principals
             .values()
             .cloned()
-            .filter(|user| user_filter(user, organisation_id, role_id))
+            .filter(|user| user_filter(&auth_user, user, organisation_id, role_id))
             .collect();
         Response::Ok(users)
     })
@@ -66,7 +81,7 @@ fn users_get_all(organisation_id: Option<u128>, role_id: Option<u128>) -> Respon
 
 #[query]
 fn users_whoami() -> Response<User> {
-    let p = authenticate_caller();
+    let p = authenticated_caller();
 
     PRINCIPALS.with(|principals| {
         let principals = principals.borrow();
@@ -79,7 +94,7 @@ fn users_whoami() -> Response<User> {
 
 #[update]
 fn users_create_one(user: NewUser) -> Response<User> {
-    let p = authenticate_caller();
+    let p = authenticated_caller();
 
     if let Some(_) = PRINCIPALS.with(|principals| {
         let principals = principals.borrow();
@@ -134,12 +149,8 @@ fn users_create_one(user: NewUser) -> Response<User> {
 
 #[query]
 fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
-    let p = authenticate_caller();
-
-    let user = PRINCIPALS.with(|principals| {
-        let principals = principals.borrow();
-        principals.get(&p).cloned()
-    });
+    let p = authenticated_caller();
+    let user = authenticated_user(p);
 
     if user.is_none() {
         return Response::Err(format!("User with principal {} not found.", p));
@@ -148,10 +159,13 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
     let user = user.unwrap();
 
     fn f(user: &User, badge: &Badge, organisation_id: Option<u128>) -> bool {
-        let has_access = has_role_based_badge_access(user, badge);
+        if !user.has_badge_access(badge) {
+            return false;
+        }
+
         match organisation_id {
-            Some(organisation_id) => has_access && badge.issuer.id == organisation_id,
-            None => has_access,
+            Some(organisation_id) => badge.issuer.id == organisation_id,
+            None => true,
         }
     }
 
@@ -168,12 +182,8 @@ fn badges_get_all(organisation_id: Option<u128>) -> Response<Vec<Badge>> {
 
 #[query]
 fn badges_get_one(badge_id: u128) -> Response<Badge> {
-    let p = authenticate_caller();
-
-    let user = PRINCIPALS.with(|principals| {
-        let principals = principals.borrow();
-        principals.get(&p).cloned()
-    });
+    let p = authenticated_caller();
+    let user = authenticated_user(p);
 
     if user.is_none() {
         return Response::Err(format!("User with principal {} not found.", p));
@@ -183,7 +193,7 @@ fn badges_get_one(badge_id: u128) -> Response<Badge> {
 
     BADGES.with(|badges| match badges.borrow().get(&badge_id) {
         Some(badge) => {
-            if !has_role_based_badge_access(&user, badge) {
+            if !user.has_badge_access(badge) {
                 return Response::Err(format!(
                     "User with principal {} does not have access to badge with id {}.",
                     p, badge_id
@@ -197,12 +207,8 @@ fn badges_get_one(badge_id: u128) -> Response<Badge> {
 
 #[update]
 fn badges_revoke_one(badge_id: u128) -> Response<bool> {
-    let p = authenticate_caller();
-
-    let user = PRINCIPALS.with(|principals| {
-        let principals = principals.borrow();
-        principals.get(&p).cloned()
-    });
+    let p = authenticated_caller();
+    let user = authenticated_user(p);
 
     if user.is_none() {
         return Response::Err(format!("User with principal {} not found.", p));
@@ -216,7 +222,7 @@ fn badges_revoke_one(badge_id: u128) -> Response<bool> {
 
     BADGES.with(|badges| match badges.borrow_mut().get_mut(&badge_id) {
         Some(badge) => {
-            if !has_role_based_badge_access(&user, badge) {
+            if !user.has_badge_access(badge) {
                 return Response::Err(format!(
                     "User with principal {} does not have access to badge with id {}.",
                     p, badge_id
@@ -231,12 +237,8 @@ fn badges_revoke_one(badge_id: u128) -> Response<bool> {
 
 #[update]
 fn badges_create_one(badge: NewBadge) -> Response<Badge> {
-    let p = authenticate_caller();
-
-    let user = PRINCIPALS.with(|principals| {
-        let principals = principals.borrow();
-        principals.get(&p).cloned()
-    });
+    let p = authenticated_caller();
+    let user = authenticated_user(p);
 
     if user.is_none() {
         return Response::Err(format!("User with principal {} not found.", p));
@@ -313,8 +315,8 @@ fn roles_get_all() -> Response<Vec<Role>> {
 fn pre_upgrade() {
     // Create an instance of stable data and persist it in stable memory
     let stable_data = StableData {
-        principals: PRINCIPALS.with(|principals| principals.borrow().clone()),
-        badges: BADGES.with(|badges| badges.borrow().clone()),
+        principals: PRINCIPALS.with(|it| it.borrow().clone()),
+        badges: BADGES.with(|it| it.borrow().clone()),
     };
 
     storage::stable_save((stable_data,)).expect("Could not save stable data.");

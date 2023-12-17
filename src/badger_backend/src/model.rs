@@ -112,6 +112,27 @@ impl User {
     pub fn is_student(&self) -> bool {
         self.has_role(STUDENT_ROLE_ID)
     }
+
+    /// Checks if the user has access to the badge.
+    /// If the user is an administrator, they have access to all badges.
+    /// If the user is a lecturer, they have access to all badges issued by their organisation.
+    /// If the user is a student, they have access to all badges they own.
+    pub fn has_badge_access(&self, badge: &Badge) -> bool {
+        self.is_admin()
+            || (self.is_lecturer() && self.organisation_id == badge.issuer.id)
+            || (self.is_student() && self.principal_id == badge.owner.principal_id)
+    }
+
+    /// Checks if the user has access to the user.
+    /// If the user is an administrator, they have access to all users.
+    /// If the user is a lecturer, they have access to all users from their organisation and all students.
+    /// If the user is a student, they have access to all users they own.
+    pub fn has_user_access(&self, other_user: &User) -> bool {
+        self.is_admin()
+            || (self.is_lecturer() && self.organisation_id == other_user.organisation_id
+                || other_user.is_student())
+            || (self.is_student() && self.principal_id == other_user.principal_id)
+    }
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]

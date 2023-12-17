@@ -2,11 +2,11 @@ use candid::Principal;
 use ic_cdk::api::{caller, time};
 
 use crate::{
-    model::{Badge, Organisation, Role, User},
-    ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, ORGANISATIONS, ROLES, STUDENT_ROLE_ID,
+    model::{Organisation, Role, User},
+    ADMINISTRATOR_ROLE_ID, LECTURER_ROLE_ID, ORGANISATIONS, PRINCIPALS, ROLES, STUDENT_ROLE_ID,
 };
 
-pub fn authenticate_caller() -> Principal {
+pub fn authenticated_caller() -> Principal {
     let principal = caller();
     if principal == Principal::anonymous() {
         panic!("Anonymous caller not allowed.");
@@ -14,14 +14,8 @@ pub fn authenticate_caller() -> Principal {
     principal
 }
 
-/// Checks if the user has access to the badge.
-/// If the user is an administrator, they have access to all badges.
-/// If the user is a lecturer, they have access to all badges issued by their organisation.
-/// If the user is a student, they have access to all badges they own.
-pub fn has_role_based_badge_access(user: &User, badge: &Badge) -> bool {
-    user.is_admin()
-        || (user.is_lecturer() && user.organisation_id == badge.issuer.id)
-        || (user.is_student() && user.principal_id == badge.owner.principal_id)
+pub fn authenticated_user(p: Principal) -> Option<User> {
+    PRINCIPALS.with(|it| it.borrow().get(&p).cloned())
 }
 
 pub fn generate_organisations() {
