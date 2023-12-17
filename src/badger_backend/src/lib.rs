@@ -8,27 +8,22 @@ use ic_cdk::{init, post_upgrade, query, update};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use util::{authenticate_caller, has_role_based_badge_access, next_badge_id};
+use util::{authenticate_caller, has_role_based_badge_access};
 
 const STUDENT_ROLE_ID: u128 = 1;
 const LECTURER_ROLE_ID: u128 = 2;
 const ADMINISTRATOR_ROLE_ID: u128 = 3;
 
+type UsersMap = BTreeMap<Principal, User>;
+type OrganizationsMap = BTreeMap<u128, Organisation>;
+type BadgesMap = BTreeMap<u128, Badge>;
+type RolesMap = BTreeMap<u128, Role>;
+
 thread_local! {
-    // Users
-    pub static PRINCIPALS: RefCell<BTreeMap<Principal, User>> = RefCell::new(BTreeMap::new());
-
-    // Organizations
-    pub static NEXT_ORGANISATION_ID: RefCell<u128> = RefCell::new(0);
-    pub static ORGANISATIONS: RefCell<BTreeMap<u128, Organisation>> = RefCell::new(BTreeMap::new());
-
-    // Badges
-    pub static NEXT_BADGE_ID: RefCell<u128> = RefCell::new(0);
-    pub static BADGES: RefCell<BTreeMap<u128, Badge>> = RefCell::new(BTreeMap::new());
-
-    // Roles
-    pub static NEXT_ROLE_ID: RefCell<u128> = RefCell::new(0);
-    pub static ROLES: RefCell<BTreeMap<u128, Role>> = RefCell::new(BTreeMap::new());
+    pub static PRINCIPALS: RefCell<UsersMap> = RefCell::default();
+    pub static ORGANISATIONS: RefCell<OrganizationsMap> = RefCell::default();
+    pub static BADGES: RefCell<BadgesMap> = RefCell::default();
+    pub static ROLES: RefCell<RolesMap> = RefCell::default();
 }
 
 #[query]
@@ -105,16 +100,20 @@ fn users_create_one(user: NewUser) -> Response<User> {
         ));
     }
 
-    let mut roles: Vec<Role> = vec![];
-
-    for role_id in &user.roles {
-        let role: Option<Role> = ROLES.with(|roles| roles.borrow().get(role_id).cloned());
-        match role {
-            Some(role) => roles.push(role),
-            None => {
-                return Response::Err(format!("Role with id {} not found.", role_id));
+    let roles_result: Result<Vec<Role>, String> = ROLES.with(|roles_map| {
+        let roles_map = roles_map.borrow();
+        let mut roles = Vec::new();
+        for role_id in user.roles {
+            match roles_map.get(&role_id) {
+                Some(role) => roles.push(role.clone()),
+                None => return Err(format!("Role with id {} not found.", role_id)),
             }
         }
+        Ok(roles)
+    });
+
+    if roles_result.is_err() {
+        return Response::Err(roles_result.unwrap_err());
     }
 
     let inserted = User {
@@ -122,7 +121,7 @@ fn users_create_one(user: NewUser) -> Response<User> {
         name: user.name.clone(),
         email: user.email.clone(),
         organisation_id: user.organisation_id,
-        roles,
+        roles: roles_result.unwrap(),
         created_at: time(),
     };
 
@@ -302,21 +301,21 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
         principals.get(&owner.unwrap()).cloned()
     });
 
-    let new_badge = Badge {
-        id: next_badge_id(),
-        title: badge.title,
-        description: badge.description,
-        badge_type: badge.badge_type,
-        issuer: organisation.unwrap(),
-        owner: owner.unwrap(),
-        is_revoked: false,
-        claims: badge.claims,
-        signed_by: vec![p.to_string()],
-        created_at: time(),
-    };
-
     BADGES.with(|badges| {
         let mut badges = badges.borrow_mut();
+
+        let new_badge = Badge {
+            id: badges.len() as u128 + 1,
+            title: badge.title,
+            description: badge.description,
+            badge_type: badge.badge_type,
+            issuer: organisation.unwrap(),
+            owner: owner.unwrap(),
+            is_revoked: false,
+            claims: badge.claims,
+            signed_by: vec![p.to_string()],
+            created_at: time(),
+        };
         badges.insert(new_badge.id, new_badge.clone());
         Response::Ok(new_badge)
     })
