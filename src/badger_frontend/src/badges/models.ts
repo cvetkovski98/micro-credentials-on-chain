@@ -5,6 +5,7 @@ export type OptionalBigInt = [] | [bigint];
 export const STUDENT_ROLE_ID = 1n;
 export const LECTURER_ROLE_ID = 2n;
 export const ADMINISTRATION_ROLE_ID = 3n;
+export const COMPANY_ROLE_ID = 4n;
 
 export type Result<T> = { ok: T } | { error: string };
 
@@ -64,6 +65,13 @@ export interface NewUserRequest {
 
 export interface FileLocation {
   location: string;
+}
+
+export interface AccessRequest {
+  accessRequestID: bigint;
+  user: User;
+  badge: Badge;
+  createdAt: string;
 }
 
 export interface Role {

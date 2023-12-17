@@ -1,10 +1,11 @@
 import React from "react";
 import { Navigate, createHashRouter } from "react-router-dom";
-import { ADMINISTRATION_ROLE_ID, LECTURER_ROLE_ID } from "../badges/models";
+import { ADMINISTRATION_ROLE_ID, LECTURER_ROLE_ID, STUDENT_ROLE_ID } from "../badges/models";
 import { ProtectedPage } from "../components/ProtectedPage";
 import { ErrorPage } from "./ErrorPage";
 import { LandingPage } from "./LandingPage";
 import { Layout } from "./Layout";
+import { AccessRequestListPage } from "./access_requests/List";
 import { BadgeCreatePage } from "./badges/Create";
 import { BadgeDetailsPage } from "./badges/Details";
 import { BadgeListPage } from "./badges/List";
@@ -76,6 +77,14 @@ export const PageRouter = createHashRouter([
         element: (
           <ProtectedPage>
             <UserDetailsPage />
+          </ProtectedPage>
+        ),
+      },
+      {
+        path: "/access-requests",
+        element: (
+          <ProtectedPage roles={[STUDENT_ROLE_ID]}>
+            <AccessRequestListPage />
           </ProtectedPage>
         ),
       },

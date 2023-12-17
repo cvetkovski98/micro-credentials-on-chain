@@ -1,18 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { STUDENT_ROLE_ID } from "../badges/models";
 import { useClient, useUser } from "../context/Global";
 import { XIcon } from "./icons/XIcon";
-
-const routes = [
-  {
-    label: "Badges",
-    path: "/badges",
-  },
-  {
-    label: "Users",
-    path: "/users",
-  },
-];
 
 export interface ItemProps extends React.PropsWithChildren {
   to?: string;
@@ -44,6 +34,8 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
   const client = useClient();
   const user = useUser();
 
+  const [routes, setRoutes] = React.useState<{ path: string; label: string }[]>([]);
+
   const logout: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     e.preventDefault();
 
@@ -54,6 +46,21 @@ export const NavBar: React.FC<NavBarProps> = ({ isOpen, toggle }) => {
     navigate("/");
     window.location.reload();
   };
+
+  useEffect(() => {
+    if (!user) return;
+
+    let defaultRoutes = [
+      { path: "/badges", label: "Badges" },
+      { path: "/users", label: "Users" },
+    ];
+
+    if (user.roles.some((role) => role.roleID === STUDENT_ROLE_ID)) {
+      defaultRoutes.push({ path: "/access-requests", label: "Access Requests" });
+    }
+
+    setRoutes(defaultRoutes);
+  }, [user]);
 
   return (
     <nav className="bg-gray-800">

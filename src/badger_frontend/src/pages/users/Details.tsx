@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { accessRequestsAPI } from "../../badges/api/remote/access_requests";
 import { badgesAPI } from "../../badges/api/remote/badges";
 import { usersAPI } from "../../badges/api/remote/users";
-import { Badge, User, isOK } from "../../badges/models";
+import { Badge, COMPANY_ROLE_ID, User, isOK } from "../../badges/models";
+import { ProtectedComponent } from "../../components/ProtectedRender";
 import { useBackendActor } from "../../context/Global";
 
 export const UserDetailsPage: React.FC = () => {
@@ -11,11 +13,14 @@ export const UserDetailsPage: React.FC = () => {
 
   const RemoteUsersAPI = usersAPI(actor);
   const RemoteBadgesAPI = badgesAPI(actor);
+  const RemoteAccessRequestsAPI = accessRequestsAPI(actor);
 
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [user, setUser] = React.useState<User>();
   const [badges, setBadges] = React.useState<Badge[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const [loading, setLoading] = React.useState(false);
+  const [requesting, setRequesting] = React.useState<boolean>(false);
 
   function loadData() {
     setLoading(true);
@@ -36,6 +41,26 @@ export const UserDetailsPage: React.FC = () => {
       });
   }
 
+  function requestAccess(badgeID: bigint) {
+    setRequesting(true);
+    RemoteAccessRequestsAPI.createOne(badgeID)
+      .then((response) => {
+        if (isOK(response)) {
+          alert(
+            `Successfully requested access to badge ${badgeID} from principal ${user.principalID}. Created request with id ${response.ok.accessRequestID}`,
+          );
+        } else {
+          setError(response.error);
+        }
+      })
+      .catch((error) => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setRequesting(false);
+      });
+  }
+
   useEffect(loadData, [id]);
 
   if (loading || !user) {
@@ -48,6 +73,11 @@ export const UserDetailsPage: React.FC = () => {
 
   return (
     <React.Fragment>
+      {requesting && (
+        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+          <strong className="font-bold">Requesting access...</strong>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto">
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
@@ -95,9 +125,14 @@ export const UserDetailsPage: React.FC = () => {
                           <h4>{badge.title}</h4>
                           <p className="text-gray-500 overflow-ellipsis">{badge.description}</p>
                         </div>
-                        <div className="cursor-pointer font-medium text-blue-600 dark:text-blue-500 hover:underline">
-                          Get access
-                        </div>
+                        <ProtectedComponent roles={[COMPANY_ROLE_ID]}>
+                          <div
+                            onClick={() => requestAccess(badge.badgeID)}
+                            className="cursor-pointer font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                          >
+                            Get access
+                          </div>
+                        </ProtectedComponent>
                       </div>
                     ))
                   )}

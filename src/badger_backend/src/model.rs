@@ -2,7 +2,8 @@ use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    BadgesMap, UsersMap, ADMINISTRATOR_ROLE_ID, COMPANY_ROLE_ID, LECTURER_ROLE_ID, STUDENT_ROLE_ID,
+    AccessRequestsMap, BadgeAccessApprovalsMap, BadgesMap, UsersMap, ADMINISTRATOR_ROLE_ID,
+    COMPANY_ROLE_ID, LECTURER_ROLE_ID, STUDENT_ROLE_ID,
 };
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
@@ -165,6 +166,30 @@ pub struct FileLocation {
 }
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
+pub struct StoredAccessRequest {
+    pub id: u128,
+
+    pub principal_id: String,
+
+    pub badge_id: u128,
+
+    pub created_at: u64,
+}
+
+#[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
+pub struct AccessRequest {
+    #[serde(rename = "accessRequestID")]
+    pub id: u128,
+
+    pub user: User,
+
+    pub badge: Badge,
+
+    #[serde(rename = "createdAt")]
+    pub created_at: u64,
+}
+
+#[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Role {
     #[serde(rename = "roleID")]
     pub id: u128,
@@ -177,4 +202,8 @@ pub struct StableData {
     pub principals: UsersMap,
 
     pub badges: BadgesMap,
+
+    pub access_requests: AccessRequestsMap,
+
+    pub badge_access_approvals: BadgeAccessApprovalsMap,
 }

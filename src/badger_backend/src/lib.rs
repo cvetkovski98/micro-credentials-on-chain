@@ -6,6 +6,7 @@ use crate::util::{authenticated_caller, authenticated_user};
 use candid::Principal;
 use ic_cdk::api::time;
 use ic_cdk::{init, post_upgrade, pre_upgrade, query, storage, update};
+use model::{AccessRequest, StoredAccessRequest};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -19,12 +20,16 @@ type UsersMap = BTreeMap<Principal, User>;
 type OrganizationsMap = BTreeMap<u128, Organisation>;
 type BadgesMap = BTreeMap<u128, Badge>;
 type RolesMap = BTreeMap<u128, Role>;
+type AccessRequestsMap = BTreeMap<Principal, Vec<StoredAccessRequest>>;
+type BadgeAccessApprovalsMap = BTreeMap<u128, Vec<Principal>>; // Badge ID -> List of Principals
 
 thread_local! {
     pub static PRINCIPALS: RefCell<UsersMap> = RefCell::default();
     pub static ORGANISATIONS: RefCell<OrganizationsMap> = RefCell::default();
     pub static BADGES: RefCell<BadgesMap> = RefCell::default();
     pub static ROLES: RefCell<RolesMap> = RefCell::default();
+    pub static ACCESS_REQUESTS: RefCell<AccessRequestsMap> = RefCell::default();
+    pub static BADGE_ACCESS_APPROVALS: RefCell<BadgeAccessApprovalsMap> = RefCell::default();
 }
 
 #[query]
@@ -354,6 +359,207 @@ fn badges_create_one(badge: NewBadge) -> Response<Badge> {
 }
 
 #[query]
+fn requests_get_all() -> Response<Vec<AccessRequest>> {
+    let p = authenticated_caller();
+
+    ACCESS_REQUESTS.with(|requests| {
+        let stored = requests.borrow().get(&p).cloned();
+        if stored.is_none() {
+            return Response::Ok(Vec::new());
+        }
+        let stored = stored.unwrap();
+
+        let mut requests = Vec::new();
+        for request in stored {
+            let requesting_principal = Principal::from_str(&request.principal_id);
+            if requesting_principal.is_err() {
+                continue;
+            }
+            let requesting_principal = requesting_principal.unwrap();
+            let user = PRINCIPALS.with(|principals| {
+                let principals = principals.borrow();
+                principals.get(&requesting_principal).cloned()
+            });
+            if user.is_none() {
+                continue;
+            }
+            let user = user.unwrap();
+            let badge = BADGES.with(|badges| {
+                let badges = badges.borrow();
+                badges.get(&request.badge_id).cloned()
+            });
+            if badge.is_none() {
+                continue;
+            }
+            let badge = badge.unwrap();
+
+            requests.push(AccessRequest {
+                id: request.id,
+                user,
+                badge,
+                created_at: request.created_at,
+            })
+        }
+
+        Response::Ok(requests)
+    })
+}
+
+#[update]
+fn requests_create_one(badge_id: u128) -> Response<AccessRequest> {
+    let p = authenticated_caller();
+    let user = authenticated_user(p);
+
+    if user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
+    }
+
+    let user = user.unwrap();
+
+    let badge = BADGES.with(|badges| {
+        let badges = badges.borrow();
+        badges.get(&badge_id).cloned()
+    });
+
+    if badge.is_none() {
+        return Response::Err(format!("Badge with id {} not found.", badge_id));
+    }
+
+    let badge = badge.unwrap();
+
+    if !user.has_badge_access(&badge) {
+        return Response::Err(format!(
+            "User with principal {} does not have access to badge with id {}.",
+            p, badge_id
+        ));
+    }
+
+    if !user.is_company() {
+        return Response::Err(format!(
+            "User with principal {} cannot request access to badge with id {}.",
+            p, badge_id
+        ));
+    }
+
+    let owning_principal = Principal::from_str(&badge.owner.principal_id);
+
+    if owning_principal.is_err() {
+        return Response::Err(format!(
+            "Invalid principal id: {}",
+            badge.owner.principal_id
+        ));
+    }
+    let owning_principal = owning_principal.unwrap();
+
+    ACCESS_REQUESTS.with(|requests| {
+        let mut requests = requests.borrow_mut();
+        let to_store = StoredAccessRequest {
+            id: requests.len() as u128 + 1,
+            principal_id: p.to_string(),
+            badge_id,
+            created_at: time(),
+        };
+
+        if requests.contains_key(&owning_principal) {
+            requests
+                .get_mut(&owning_principal)
+                .unwrap()
+                .push(to_store.clone());
+        } else {
+            requests.insert(owning_principal, vec![to_store.clone()]);
+        }
+        Response::Ok(AccessRequest {
+            id: to_store.id,
+            user,
+            badge,
+            created_at: to_store.created_at,
+        })
+    })
+}
+
+#[update]
+fn requests_approve_one(request_id: u128) -> Response<bool> {
+    let p = authenticated_caller();
+    let user = authenticated_user(p);
+
+    if user.is_none() {
+        return Response::Err(format!("User with principal {} not found.", p));
+    }
+
+    let user = user.unwrap();
+
+    if !user.is_student() {
+        return Response::Err(format!(
+            "User with principal {} cannot approve access requests.",
+            p
+        ));
+    }
+
+    let pending_request = ACCESS_REQUESTS.with(|requests| {
+        let mut requests = requests.borrow_mut();
+        let mut pending_request: Option<StoredAccessRequest> = None;
+        for (_, stored) in requests.iter_mut() {
+            let index = stored.iter().position(|r| r.id == request_id);
+            if index.is_some() {
+                pending_request = Some(stored.remove(index.unwrap()));
+                break;
+            }
+        }
+        if pending_request.is_none() {
+            return Result::Err(format!("Access request with id {} not found.", request_id));
+        }
+        Result::Ok(pending_request.unwrap())
+    });
+
+    if pending_request.is_err() {
+        return Response::Err(pending_request.unwrap_err());
+    }
+
+    let pending_request = pending_request.unwrap();
+
+    let requested_badge = BADGES.with(|badges| {
+        let badges = badges.borrow();
+        badges.get(&pending_request.badge_id).cloned()
+    });
+    if requested_badge.is_none() {
+        return Response::Err(format!(
+            "Badge with id {} not found.",
+            pending_request.badge_id
+        ));
+    }
+    let requested_badge = requested_badge.unwrap();
+
+    if user.principal_id != requested_badge.owner.principal_id {
+        return Response::Err(format!(
+            "User with principal {} cannot approve access request for badge with id {}.",
+            p, pending_request.badge_id
+        ));
+    }
+
+    let requesting_principal = Principal::from_str(&pending_request.principal_id);
+    if requesting_principal.is_err() {
+        return Response::Err(format!(
+            "Invalid principal id: {}",
+            pending_request.principal_id
+        ));
+    }
+    let requesting_principal = requesting_principal.unwrap();
+
+    BADGE_ACCESS_APPROVALS.with(|approvals| {
+        let mut approvals = approvals.borrow_mut();
+        if approvals.contains_key(&pending_request.badge_id) {
+            approvals
+                .get_mut(&pending_request.badge_id)
+                .unwrap()
+                .push(requesting_principal);
+        } else {
+            approvals.insert(pending_request.badge_id, vec![requesting_principal.clone()]);
+        }
+        Response::Ok(true)
+    })
+}
+
+#[query]
 fn roles_get_all() -> Response<Vec<Role>> {
     ROLES.with(|roles| Response::Ok(roles.borrow().values().cloned().collect()))
 }
@@ -364,6 +570,8 @@ fn pre_upgrade() {
     let stable_data = StableData {
         principals: PRINCIPALS.with(|it| it.borrow().clone()),
         badges: BADGES.with(|it| it.borrow().clone()),
+        access_requests: ACCESS_REQUESTS.with(|it| it.borrow().clone()),
+        badge_access_approvals: BADGE_ACCESS_APPROVALS.with(|it| it.borrow().clone()),
     };
 
     storage::stable_save((stable_data,)).expect("Could not save stable data.");
@@ -390,6 +598,20 @@ fn post_upgrade() {
         let mut badges = badges.borrow_mut();
         for (id, badge) in stable_data.badges {
             badges.insert(id, badge);
+        }
+    });
+
+    ACCESS_REQUESTS.with(|requests| {
+        let mut requests = requests.borrow_mut();
+        for (p, stored) in stable_data.access_requests {
+            requests.insert(p, stored);
+        }
+    });
+
+    BADGE_ACCESS_APPROVALS.with(|approvals| {
+        let mut approvals = approvals.borrow_mut();
+        for (id, principals) in stable_data.badge_access_approvals {
+            approvals.insert(id, principals);
         }
     });
 }

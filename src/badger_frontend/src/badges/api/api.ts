@@ -1,4 +1,5 @@
 import {
+  AccessRequest,
   Badge,
   NewBadgeRequest,
   NewUserRequest,
@@ -27,4 +28,10 @@ export interface UsersAPI {
   getWhoAmI(): Promise<Result<User>>;
   createOne(user: NewUserRequest): Promise<Result<User>>;
   getAllRoles(): Promise<Result<Role[]>>;
+}
+
+export interface AccessRequestsAPI {
+  getAll(): Promise<Result<AccessRequest[]>>;
+  createOne(badgeID: bigint): Promise<Result<AccessRequest>>;
+  approveOne(accessRequestID: bigint): Promise<Result<boolean>>;
 }

@@ -48,8 +48,11 @@ type NewUserRequest = record {
     organisationID : nat;
 };
 
-type FileLocation = record {
-    location : text;
+type AccessRequest = record {
+    accessRequestID : nat;
+    user : User;
+    badge : Badge;
+    createdAt : nat64;
 };
 
 type Role = record {
@@ -92,13 +95,23 @@ type BadgeDeleteOneResponse = variant {
     error : text;
 };
 
-type BadgeVerifyOneResponse = variant {
-    ok : bool;
+type BadgeCreateOneResponse = variant {
+    ok : Badge;
     error : text;
 };
 
-type BadgeCreateOneResponse = variant {
-    ok : Badge;
+type RequestsGetAllResponse = variant {
+    ok : vec AccessRequest;
+    error : text;
+};
+
+type RequestsCreateOneResponse = variant {
+    ok : AccessRequest;
+    error : text;
+};
+
+type RequestsApproveOneResponse = variant {
+    ok : bool;
     error : text;
 };
 
@@ -122,6 +135,11 @@ service badger : {
     badges_get_one : (badge_id : nat) -> (BadgeGetOneResponse);
     badges_revoke_one : (badge_id : nat) -> (BadgeDeleteOneResponse);
     badges_create_one : (badge : NewBadge) -> (BadgeCreateOneResponse);
+
+    // access requests
+    requests_get_all : () -> (RequestsGetAllResponse);
+    requests_create_one : (badge_id : nat) -> (RequestsCreateOneResponse);
+    requests_approve_one : (request_id : nat) -> (RequestsApproveOneResponse);
 
     // roles
     roles_get_all : () -> (RoleGetAllResponse);
