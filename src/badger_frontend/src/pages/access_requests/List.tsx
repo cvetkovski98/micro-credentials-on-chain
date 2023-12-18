@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { accessRequestsAPI } from "../../badges/api/remote/access_requests";
 import { AccessRequest, isOK } from "../../badges/models";
+import { AccessRequestTable } from "../../components/access_requests/AccessRequestTable";
 import { useBackendActor } from "../../context/Global";
 
 export const AccessRequestListPage: React.FC = () => {
@@ -11,6 +12,7 @@ export const AccessRequestListPage: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [accessRequests, setAccessRequests] = React.useState<AccessRequest[]>([]);
+  const [approving, setApproving] = React.useState(false);
 
   useEffect(loadData, []);
 
@@ -31,6 +33,7 @@ export const AccessRequestListPage: React.FC = () => {
   }
 
   function handleApprove(accessRequestID: bigint) {
+    setApproving(true);
     RemoteAccessRequestsAPI.approveOne(accessRequestID)
       .then((response) => {
         if (isOK(response)) {
@@ -42,6 +45,9 @@ export const AccessRequestListPage: React.FC = () => {
       })
       .catch((error) => {
         setError(error.message);
+      })
+      .finally(() => {
+        setApproving(false);
       });
   }
 
@@ -54,30 +60,22 @@ export const AccessRequestListPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <h1>Access Requests</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Badge Title</th>
-            <th>Requester Name</th>
-            <th>Requester Email</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {accessRequests.map((accessRequest) => (
-            <tr key={accessRequest.accessRequestID}>
-              <td>{accessRequest.badge.title}</td>
-              <td>{accessRequest.user.name}</td>
-              <td>{accessRequest.user.email}</td>
-              <td>
-                <button onClick={() => handleApprove(accessRequest.accessRequestID)}>Approve</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <React.Fragment>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold mb-2">Access Requests</h1>
+      </div>
+
+      {approving && (
+        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+          <strong className="font-bold">Approving request...</strong>
+        </div>
+      )}
+
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <AccessRequestTable requests={accessRequests} onApprove={(req) => handleApprove(req.accessRequestID)} />
+      )}
+    </React.Fragment>
   );
 };
